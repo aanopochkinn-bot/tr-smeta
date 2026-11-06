@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>T&amp;R – смета</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+/* Фирменные цвета T&R (гамма Wine) */
+:root{ --ink:#0E0E10; --paper:#F3EFE6; --wine:#8A2B25; --wl:#B5463B; --stone:#D6D0C4; --sand:#E9E4D8; --line:#DDD6C9; --mute:#77736B; --graphite:#2A2A2E }
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
+html,body{ background:var(--paper); color:var(--ink); font:500 15px/1.4 Manrope,system-ui,sans-serif }
+body{ max-width:430px; margin:0 auto; min-height:100vh; position:relative }
+button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
+.mono{ font:500 11px "JetBrains Mono",monospace; letter-spacing:.12em; text-transform:uppercase }
+.amp{ font-family:"Instrument Serif",serif; font-style:italic; font-weight:400; color:var(--wine); text-transform:none; letter-spacing:0 }
+.screen{ display:none; padding:16px 16px 120px; min-height:100vh }
+.screen.on{ display:block }
+.bar{ display:flex; align-items:center; justify-content:space-between; height:44px; margin-bottom:8px }
+.bar img{ height:20px }
+.bar .back{ width:36px; height:36px; border-radius:50%; background:var(--sand); font:700 18px Manrope }
+.bar .cartbtn{ position:relative; height:36px; padding:0 14px; border-radius:20px; background:var(--ink); color:var(--paper); font:700 13px Manrope; display:flex; align-items:center; gap:8px }
+.bar .cartbtn i{ font-style:normal; background:var(--wl); border-radius:10px; min-width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-size:11px }
+h1{ font:900 30px/.98 Unbounded; text-transform:uppercase; letter-spacing:-.02em }
+h1 .amp{ font-size:38px; line-height:.7 }
+h2{ font:800 18px/1.1 Unbounded; text-transform:uppercase; letter-spacing:-.01em }
+.sub{ color:var(--graphite); margin-top:10px; font-size:15px }
+.lbl{ color:var(--mute); display:block; margin:22px 0 10px }
+.ico{ width:30px; height:30px; stroke:var(--ink); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none }
+.ico .a{ stroke:var(--wine) } .ico .f{ fill:var(--wine); stroke:none }
+
+/* главный экран */
+.hero{ background:var(--ink); color:var(--paper); border-radius:24px; padding:22px 20px 20px; position:relative; overflow:hidden }
+.hero .bigamp{ position:absolute; right:-24px; top:-60px; font:italic 400 230px/1 "Instrument Serif"; color:var(--wl); opacity:.22 }
+.hero img{ height:30px; position:relative; filter:brightness(0) invert(1) }
+.hero .mono{ color:#8D8A84 }
+.hero h1{ margin-top:34px; position:relative } .hero h1 .amp{ color:var(--wl) }
+.hero p{ color:#C9C4BA; margin-top:10px; position:relative }
+.steps3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px }
+.steps3 div{ background:var(--sand); border-radius:16px; padding:12px }
+.steps3 b{ display:block; font:900 20px Unbounded; color:var(--wine) }
+.steps3 span{ font-size:12px; color:var(--graphite); line-height:1.3; display:block; margin-top:4px }
+.quick{ display:flex; gap:8px; flex-wrap:wrap }
+.chip{ border:1.5px solid var(--stone); border-radius:20px; padding:9px 14px; font:700 13px Manrope; background:#F8F5EE }
+.chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink) }
+
+/* каталог */
+.tabs{ display:flex; gap:6px; overflow-x:auto; margin:14px -16px 6px; padding:0 16px; scrollbar-width:none }
+.tabs::-webkit-scrollbar{ display:none }
+.tabs .chip{ white-space:nowrap }
+.svc{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:8px }
+.svc .ib{ width:44px; height:44px; border-radius:14px; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.svc .n{ font:700 10px "JetBrains Mono"; color:var(--wine); letter-spacing:.1em }
+.svc b{ display:block; font:800 15px/1.2 Manrope; margin-top:1px }
+.svc small{ display:block; color:var(--mute); font-size:12px; margin-top:2px }
+.svc .p{ text-align:right; font:800 14px Unbounded; white-space:nowrap }
+.svc .p span{ display:block; font:500 10px "JetBrains Mono"; color:var(--mute); letter-spacing:.06em; margin-top:2px }
+.svc .add{ width:34px; height:34px; border-radius:50%; background:var(--wine); color:var(--paper); font:700 20px/34px Manrope; text-align:center; margin-left:auto; margin-top:6px }
+.svc.in{ border-color:var(--wine); box-shadow:inset 0 0 0 1px var(--wine) }
+.svc.in .add{ background:var(--ink) }
+.opt{ display:inline-block; border:1px solid var(--wine); color:var(--wine); border-radius:12px; padding:1px 7px; font:700 9px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase; vertical-align:2px; margin-left:4px }
+
+/* карточка услуги */
+.ihead{ display:flex; gap:14px; align-items:center }
+.ihead .ib{ width:60px; height:60px; border-radius:18px; background:var(--ink); display:flex; align-items:center; justify-content:center }
+.ihead .ib .ico{ stroke:var(--paper) } .ihead .ib .ico .a{ stroke:var(--wl) } .ihead .ib .ico .f{ fill:var(--wl) }
+.incl{ list-style:none; display:flex; flex-wrap:wrap; gap:6px; margin-top:12px }
+.incl li{ background:var(--sand); border-radius:12px; padding:6px 10px; font:600 12px Manrope }
+.stp{ display:flex; align-items:center; justify-content:space-between; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:12px 14px; margin-bottom:8px }
+.stp b{ font:800 15px Manrope } .stp small{ display:block; color:var(--mute); font-size:12px }
+.stp .ctl{ display:flex; align-items:center; gap:12px }
+.stp .ctl button{ width:38px; height:38px; border-radius:50%; background:var(--sand); font:700 20px Manrope }
+.stp .ctl button.pl{ background:var(--ink); color:var(--paper) }
+.stp .ctl span{ min-width:30px; text-align:center; font:900 20px Unbounded }
+.sum{ display:flex; justify-content:space-between; align-items:baseline; border-top:1.5px solid var(--ink); padding-top:12px; margin-top:14px }
+.sum b{ font:900 26px Unbounded } .sum span{ color:var(--mute) }
+.note{ font-size:12px; color:var(--mute); margin-top:8px; line-height:1.4 }
+
+/* смета */
+.row{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line) }
+.row b{ font:800 14px Manrope } .row small{ display:block; color:var(--mute); font:500 11px "JetBrains Mono"; letter-spacing:.04em; margin-top:2px }
+.row .s{ font:800 14px Unbounded; white-space:nowrap; text-align:right }
+.row .s em{ display:block; font:600 10px Manrope; font-style:normal; color:var(--wine) }
+.row .ico{ width:26px; height:26px }
+.auto{ background:var(--sand); border-radius:16px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px }
+.auto i{ font-style:normal; color:var(--wine); font-size:15px }
+.sw{ display:flex; justify-content:space-between; align-items:center; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:13px 14px; margin-top:8px }
+.sw b{ font:800 14px Manrope } .sw small{ display:block; color:var(--mute); font-size:12px }
+.tg{ width:46px; height:28px; border-radius:14px; background:var(--stone); position:relative; flex:none }
+.tg:after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.2s }
+.tg.on{ background:var(--wine) } .tg.on:after{ left:21px }
+.total{ background:var(--ink); color:var(--paper); border-radius:22px; padding:18px; margin-top:14px }
+.total .l{ display:flex; justify-content:space-between; font-size:13px; color:#C9C4BA; padding:3px 0 }
+.total .big{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #2A2A2E; margin-top:10px; padding-top:12px }
+.total .big b{ font:900 30px Unbounded } .total .big span{ font:700 12px "JetBrains Mono"; letter-spacing:.1em; color:#8D8A84; text-transform:uppercase }
+.empty{ text-align:center; padding:60px 20px; color:var(--mute) }
+
+/* заявка */
+.fld{ background:#F8F5EE; border:1px solid var(--line); border-radius:16px; padding:10px 14px; margin-bottom:8px }
+.fld label{ display:block; color:var(--mute); font:500 10px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase }
+.fld input,.fld textarea{ width:100%; border:0; background:none; font:700 15px Manrope; color:var(--ink); outline:none; margin-top:3px; resize:none }
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.dress{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.dress button{ text-align:left; background:#F8F5EE; border:1.5px solid var(--line); border-radius:16px; padding:12px }
+.dress button b{ display:block; font:800 14px Manrope } .dress button span{ font-size:12px; color:var(--mute) }
+.dress button.on{ border-color:var(--wine); background:#fff }
+
+/* готово */
+.ticket{ margin-top:26px; background:var(--wine); color:var(--paper); border-radius:24px; display:flex; position:relative; transform:rotate(-3deg) }
+.ticket:before,.ticket:after{ content:""; position:absolute; right:84px; width:24px; height:24px; border-radius:50%; background:var(--paper) }
+.ticket:before{ top:-12px } .ticket:after{ bottom:-12px }
+.ticket .l{ flex:1; padding:22px; border-right:2px dashed rgba(243,239,230,.6) }
+.ticket .l b{ display:block; font:900 34px Unbounded } .ticket .l span{ font:700 11px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase; color:#F0C9C3 }
+.ticket .r{ width:96px; display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; transform:rotate(180deg); font:700 11px "JetBrains Mono"; letter-spacing:.14em; text-transform:uppercase }
+.next{ margin-top:30px }
+.next div{ display:grid; grid-template-columns:34px 1fr; gap:10px; padding:12px 0; border-bottom:1px solid var(--line) }
+.next b{ font:900 18px Unbounded; color:var(--wine) }
+
+/* нижняя кнопка (как MainButton Telegram) */
+.main{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:430px; padding:12px 16px calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(transparent,var(--paper) 30%) }
+.main button{ width:100%; height:54px; border-radius:16px; background:var(--wine); color:var(--paper); font:800 15px Unbounded; display:flex; align-items:center; justify-content:space-between; padding:0 18px }
+.main button span{ font:700 13px Manrope; opacity:.85 }
+.main button.dark{ background:var(--ink) }
+.main.hide{ display:none }
+.toast{ position:fixed; left:50%; top:16px; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:14px; padding:10px 14px; font:700 13px Manrope; display:none; z-index:9 }
+</style></head><body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- 01 Хелперы: рука помощи -->
+    <symbol id="i01" viewBox="0 0 48 48"><path d="M6 30h7l9 3h7a3 3 0 0 0 0-6h-6"/><path d="M13 39l4 2h15l12-8a3 3 0 0 0-3-5l-9 5"/><path d="M6 27v14"/><path class="a" d="M30 7l1.6 3.4L35 12l-3.4 1.6L30 17l-1.6-3.4L25 12l3.4-1.6z"/></symbol>
+    <!-- 02 Промо: рупор -->
+    <symbol id="i02" viewBox="0 0 48 48"><path d="M8 20h7l17-9v26l-17-9H8z"/><path d="M15 28l3 11h5l-2-10"/><path class="a" d="M38 18c2 2 2 10 0 12M42 14c4 4 4 16 0 20"/></symbol>
+    <!-- 03 Промо-модели: силуэт + звезда -->
+    <symbol id="i03" viewBox="0 0 48 48"><circle cx="22" cy="13" r="6"/><path d="M11 42c0-10 5-17 11-17s11 7 11 17"/><path d="M17 42l5-9 5 9"/><path class="a" d="M38 6l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z"/></symbol>
+    <!-- 04 Супервайзер: рация -->
+    <symbol id="i04" viewBox="0 0 48 48"><rect x="14" y="14" width="18" height="28" rx="3"/><path d="M20 14V5"/><path d="M18 22h10M18 27h10"/><circle cx="23" cy="35" r="2.5"/><path class="a" d="M36 10c3 3 3 9 0 12M40 6c5 5 5 15 0 20"/></symbol>
+    <!-- 05 Хелперы-грузчики: коробка -->
+    <symbol id="i05" viewBox="0 0 48 48"><path d="M7 16l17-8 17 8v18l-17 8-17-8z"/><path d="M7 16l17 8 17-8M24 24v18"/><path class="a" d="M15.5 12l17 8v7"/></symbol>
+    <!-- 06 Операторы аккредитации: бейдж с QR -->
+    <symbol id="i06" viewBox="0 0 48 48"><rect x="11" y="9" width="26" height="33" rx="3"/><path d="M19 9V5h10v4"/><path d="M17 17h6v6h-6zM25 17h6v6h-6zM17 25h6v6h-6z"/><path class="a" d="M26 26h2v2h-2zM29 29h2v2h-2zM17 36h14"/></symbol>
+    <!-- 07 Водитель: хэтчбек -->
+    <symbol id="i07" viewBox="0 0 48 48"><path d="M5 31v-6l5-2 6-8h15l7 8h4l2 3v5h-4"/><path d="M14 31h18"/><circle cx="10" cy="32" r="4"/><circle cx="36" cy="32" r="4"/><path class="a" d="M18 16v7h18"/></symbol>
+    <!-- 08 Свет и съёмка: прожектор -->
+    <symbol id="i08" viewBox="0 0 48 48"><path d="M10 14h16l8-5v22l-8-5H10z"/><path d="M18 26v8M12 42l6-8 6 8"/><path class="a" d="M38 12l6-3M39 20h6M38 28l6 3"/></symbol>
+    <!-- 09 Монтажёр, рилс-мейкер: телефон 9:16 + play -->
+    <symbol id="i09" viewBox="0 0 48 48"><rect x="13" y="4" width="22" height="40" rx="4"/><path d="M21 40h6"/><path class="f" d="M20 17l11 7-11 7z"/></symbol>
+    <!-- 10 Ивент-задачи: чек-лист -->
+    <symbol id="i10" viewBox="0 0 48 48"><rect x="9" y="7" width="30" height="36" rx="3"/><path d="M18 7V4h12v3"/><path d="M23 17h10M23 26h10M23 35h7"/><path class="a" d="M14 17l2 2 3-4M14 26l2 2 3-4M14 35l2 2 3-4"/></symbol>
+    <!-- хайлайты -->
+    <symbol id="h-cases" viewBox="0 0 48 48"><rect x="7" y="13" width="34" height="24" rx="3"/><path d="M17 13V9h14v4"/><path class="a" d="M7 23h34"/></symbol>
+    <symbol id="h-team" viewBox="0 0 48 48"><circle cx="17" cy="17" r="5"/><circle cx="31" cy="17" r="5"/><path d="M7 38c0-7 4-12 10-12s10 5 10 12"/><path d="M27 27c1-1 2-1 4-1 6 0 10 5 10 12"/><path class="a" d="M24 7v4"/></symbol>
+    <symbol id="h-rev" viewBox="0 0 48 48"><path d="M8 10h32v22H22l-9 7v-7H8z"/><path class="a" d="M24 15l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z"/></symbol>
+    <symbol id="h-job" viewBox="0 0 48 48"><circle cx="21" cy="16" r="6"/><path d="M9 40c0-9 5-15 12-15 3 0 5 1 7 2"/><path class="a" d="M36 28v12M30 34h12"/></symbol>
+  </defs>
+</svg>
+
+<!-- ========== 1. ГЛАВНАЯ ========== -->
+<section class="screen" id="home">
+  <div class="bar"><img src="mark-light-bg.svg" alt="T&amp;R"><span class="mono" style="color:var(--mute)">Смета онлайн</span></div>
+  <div class="hero"><div class="bigamp">&amp;</div>
+    <img src="logo-light-bg.svg" alt="T&amp;R Events Agency">
+    <h1>Посчитайте <br>команду <span class="amp">за минуту</span></h1>
+    <p>Выберите услуги, укажите людей и часы – бот сразу покажет стоимость и отправит заявку менеджеру.</p>
+  </div>
+  <div class="steps3"><div><b>01</b><span>Выберите услуги</span></div><div><b>02</b><span>Люди и часы</span></div><div><b>03</b><span>Смета и заявка</span></div></div>
+  <span class="lbl mono">Быстрый старт</span>
+  <div class="quick" id="presets"></div>
+  <span class="lbl mono">Популярное</span>
+  <div id="popular"></div>
+</section>
+
+<!-- ========== 2. КАТАЛОГ ========== -->
+<section class="screen" id="catalog">
+  <div class="bar"><button class="back" data-go="home">‹</button><button class="cartbtn" data-go="cart">Смета <i class="cnt">0</i></button></div>
+  <h1>Каталог <span class="amp">услуг</span></h1>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+  <p class="note">Ставка – за 1 час работы одного специалиста. Бриф, дресс-код и замена при неявке уже включены.</p>
+</section>
+
+<!-- ========== 3. УСЛУГА ========== -->
+<section class="screen" id="item">
+  <div class="bar"><button class="back" data-go="catalog">‹</button><button class="cartbtn" data-go="cart">Смета <i class="cnt">0</i></button></div>
+  <div id="itemBody"></div>
+</section>
+
+<!-- ========== 4. СМЕТА ========== -->
+<section class="screen" id="cart">
+  <div class="bar"><button class="back" data-go="catalog">‹</button><span class="mono" style="color:var(--mute)">Смета № <span id="num">0001</span></span></div>
+  <h1>Ваша <span class="amp">смета</span></h1>
+  <div id="cartBody"></div>
+</section>
+
+<!-- ========== 5. ЗАЯВКА ========== -->
+<section class="screen" id="form">
+  <div class="bar"><button class="back" data-go="cart">‹</button><span class="mono" style="color:var(--mute)">Шаг 3 из 3</span></div>
+  <h1>О вашем <span class="amp">ивенте</span></h1>
+  <p class="sub">Менеджер проверит смету и подберёт кандидатов с фото.</p>
+  <span class="lbl mono">Мероприятие</span>
+  <div class="fld"><label>Формат</label><input value="Конференция" id="f_fmt"></div>
+  <div class="two"><div class="fld"><label>Дата</label><input value="14.12.2026" id="f_date"></div><div class="fld"><label>Время</label><input value="09:00 – 18:00" id="f_time"></div></div>
+  <div class="fld"><label>Площадка</label><input value="Москва, Красный Октябрь" id="f_place"></div>
+  <span class="lbl mono">Дресс-код</span>
+  <div class="dress" id="dress"><button class="on" data-d="Total black"><b>Total black</b><span>всё чёрное</span></button><button data-d="Ваш образ"><b>Ваш образ</b><span>форма или ТЗ</span></button></div>
+  <span class="lbl mono">Контакт</span>
+  <div class="fld"><label>Имя и компания</label><input value="Анна, Event Lab" id="f_name"></div>
+  <div class="fld"><label>Telegram или телефон</label><input value="@anna_eventlab" id="f_contact"></div>
+  <div class="fld"><label>Комментарий</label><textarea rows="2" id="f_comm">Нужна регистрация с 8:00</textarea></div>
+</section>
+
+<!-- ========== 6. ГОТОВО ========== -->
+<section class="screen" id="done">
+  <div class="bar"><img src="mark-light-bg.svg" alt=""><span class="mono" style="color:var(--mute)">Заявка отправлена</span></div>
+  <h1 style="margin-top:20px">Команда <br>почти <span class="amp">в сборе</span></h1>
+  <p class="sub">Смета и детали ушли менеджеру T&amp;R. Мы на связи в течение часа.</p>
+  <div class="ticket"><div class="l"><span>Смета</span><b id="tNum">№ 0001</b><span id="tSum">0 ₽</span></div><div class="r">Team &amp; Resp.</div></div>
+  <div class="next">
+    <div><b>01</b><span><b style="font:800 14px Manrope;color:var(--ink)">Проверим смету</b><br>и уточним детали в Telegram</span></div>
+    <div><b>02</b><span><b style="font:800 14px Manrope;color:var(--ink)">Пришлём анкеты</b><br>кандидатов с фото – за 1 день</span></div>
+    <div><b>03</b><span><b style="font:800 14px Manrope;color:var(--ink)">Закрепим команду</b><br>за вашей датой</span></div>
+  </div>
+</section>
+
+<div class="main" id="main"><button id="mainBtn"><span id="mainL">Открыть каталог</span><span id="mainR"></span></button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Данные ----------
+// price – ₽ за 1 час одного специалиста, null – договорная цена
+const SVC = [
+  {id:"01", g:"Персонал", name:"Хелперы", short:"зоны, гардероб, материалы", price:700, inc:["Подготовка зон","Гардероб","Раздача материалов","Помощь организатору"], staff:true},
+  {id:"02", g:"Персонал", name:"Промо", short:"сэмплинг, активации, стенд", price:700, inc:["Сэмплинг","Активации","Работа на стенде","Фотоотчёт"], staff:true},
+  {id:"03", g:"Персонал", name:"Промо-модели", short:"выставки, VIP-зоны", price:1000, inc:["Выставки","Презентации","VIP-зоны","Подбор по типажу"], staff:true},
+  {id:"04", g:"Персонал", name:"Супервайзер", short:"старший на площадке", price:800, inc:["Бриф","Тайминг","Замены","Отчёт"]},
+  {id:"05", g:"Площадка", name:"Хелперы-грузчики", short:"погрузка, монтаж", price:750, inc:["Погрузка","Монтаж и демонтаж","Расстановка","Ночные смены"], staff:true},
+  {id:"06", g:"Площадка", name:"Операторы аккредитации", short:"регистрация, QR, бейджи", price:700, inc:["Списки и QR","Печать бейджей","Контроль доступа","Отчёт по явке"], staff:true},
+  {id:"07", g:"Площадка", name:"Водитель на легковом авто", short:"хэтчбек: команда, мерч", price:null, inc:["Трансфер команды","Мерч и материалы","Ранние выезды"]},
+  {id:"08", g:"Продакшн", name:"Свет и съёмка", short:"свет, фото, видео", price:null, opt:true, inc:["Свет","Фото и видео","Своя техника"]},
+  {id:"09", g:"Продакшн", name:"Монтажёр, рилс-мейкер", short:"рилсы день в день", price:null, opt:true, inc:["Рилсы","After-movie","Сторис"]},
+  {id:"10", g:"Продакшн", name:"Ивент-задачи", short:"площадка, смета, сценарий", price:null, inc:["Площадка","Смета","Концепция","Сценарий"]},
+];
+const PRESETS = {
+  "Конференция": {"06":[3,6],"01":[6,8]},
+  "Корпоратив": {"01":[4,6],"05":[3,4]},
+  "Промо-акция": {"02":[4,6],"03":[2,6]},
+  "Выставка": {"03":[2,8],"02":[3,8],"05":[2,4]},
+};
+// Адрес сервера бота на PythonAnywhere (без слэша в конце)
+const API_URL = "https://ЛОГИН.pythonanywhere.com";
+const URGENT = 0.30;          // менее 12 ч до начала
+const SV_FROM = 4;            // супервайзер от 4 человек персонала
+
+// ---------- Состояние ----------
+let cart = {};                // id -> {p: людей, h: часов}
+let urgent = false, svOff = false, cur = "01", tab = "Все", dress = "Total black";
+const $ = s => document.querySelector(s);
+const rub = n => n.toLocaleString("ru-RU").replace(/ /g," ") + " ₽";
+const ico = id => `<svg class="ico" viewBox="0 0 48 48"><use href="#i${id}"/></svg>`;
+const byId = id => SVC.find(s => s.id === id);
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#F3EFE6"); }
+const haptic = () => tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred("light");
+function toast(t){ const e=$("#toast"); e.textContent=t; e.style.display="block"; clearTimeout(e._t); e._t=setTimeout(()=>e.style.display="none",1600); }
+
+// ---------- Расчёт ----------
+function staffCount(){ return Object.entries(cart).filter(([id])=>byId(id).staff).reduce((a,[,v])=>a+v.p,0); }
+function maxHours(){ return Math.max(0,...Object.values(cart).map(v=>v.h)); }
+function calc(){
+  const lines = Object.entries(cart).map(([id,v]) => { const s=byId(id); return {s, p:v.p, h:v.h, sum: s.price ? s.price*v.p*v.h : null}; });
+  const needSv = staffCount() >= SV_FROM && !cart["04"];
+  if (needSv && !svOff) lines.push({s:byId("04"), p:1, h:maxHours()+1, sum:800*(maxHours()+1), auto:true});
+  const base = lines.reduce((a,l)=>a+(l.sum||0),0);
+  const extra = urgent ? Math.round(base*URGENT) : 0;
+  return {lines, base, extra, total: base+extra, needSv, dog: lines.some(l=>l.sum===null)};
+}
+
+// ---------- Отрисовка ----------
+function renderHome(){
+  $("#presets").innerHTML = Object.keys(PRESETS).map(k=>`<button class="chip" data-preset="${k}">${k}</button>`).join("");
+  $("#popular").innerHTML = ["01","06","03"].map(svcRow).join("");
+}
+function svcRow(id){
+  const s=byId(id), inC=!!cart[id];
+  return `<div class="svc ${inC?"in":""}" data-open="${id}"><div class="ib">${ico(id)}</div>
+    <div><span class="n">${id}</span><b>${s.name}${s.opt?'<span class="opt">опция</span>':""}</b><small>${s.short}</small></div>
+    <div><div class="p">${s.price?rub(s.price):"Договорная"}<span>${s.price?"за час":"под задачу"}</span></div><div class="add" data-add="${id}">${inC?"✓":"+"}</div></div></div>`;
+}
+function renderCatalog(){
+  const groups=["Все","Персонал","Площадка","Продакшн"];
+  $("#tabs").innerHTML = groups.map(g=>`<button class="chip ${g===tab?"on":""}" data-tab="${g}">${g}</button>`).join("");
+  $("#list").innerHTML = SVC.filter(s=>tab==="Все"||s.g===tab).map(s=>svcRow(s.id)).join("");
+}
+function renderItem(){
+  const s=byId(cur), v=cart[cur]||{p:1,h:s.id==="04"?9:8};
+  $("#itemBody").innerHTML = `
+    <div class="ihead"><div class="ib">${ico(s.id)}</div><div><span class="mono" style="color:var(--wine)">${s.id} · ${s.g}</span><h2 style="margin-top:4px">${s.name}</h2></div></div>
+    ${s.opt?'<p class="note" style="color:var(--wine)">Опция – подключаем по вашему запросу, за доп. плату.</p>':""}
+    <ul class="incl">${s.inc.map(x=>`<li>${x}</li>`).join("")}</ul>
+    <span class="lbl mono">Сколько нужно</span>
+    <div class="stp"><div><b>Человек</b><small>в смене</small></div><div class="ctl"><button data-st="p,-1">–</button><span id="vp">${v.p}</span><button class="pl" data-st="p,1">+</button></div></div>
+    <div class="stp"><div><b>Часов</b><small>на человека</small></div><div class="ctl"><button data-st="h,-1">–</button><span id="vh">${v.h}</span><button class="pl" data-st="h,1">+</button></div></div>
+    <div class="sum"><span>${s.price?`${rub(s.price)} × ${v.p} чел × ${v.h} ч`:"Стоимость"}</span><b>${s.price?rub(s.price*v.p*v.h):"Договорная"}</b></div>
+    <p class="note">${s.price?"Срочный заказ (менее 12 ч до начала) считается в смете отдельно.":"Менеджер посчитает стоимость после заявки – добавьте позицию в смету."}</p>`;
+  window._draft = {...v};
+}
+function renderCart(){
+  const c=calc();
+  if(!c.lines.length){ $("#cartBody").innerHTML=`<div class="empty"><div style="font:italic 400 90px/1 'Instrument Serif';color:var(--wine)">&amp;</div>Смета пока пустая.<br>Добавьте услуги из каталога.</div>`; return; }
+  $("#cartBody").innerHTML = `
+    <div style="margin-top:10px">${c.lines.map(l=>`<div class="row">${ico(l.s.id)}<div><b>${l.s.name}${l.auto?' <span class="opt">авто</span>':""}</b><small>${l.p} чел × ${l.h} ч${l.s.price?` × ${l.s.price} ₽`:""}</small></div><div class="s">${l.sum!==null?rub(l.sum):"договорная"}${l.auto?"":`<em data-edit="${l.s.id}">изменить</em>`}</div></div>`).join("")}</div>
+    ${c.needSv?`<div class="auto"><i>✦</i><div>В команде ${staffCount()} чел. – от ${SV_FROM} мы ставим супервайзера: он ведёт смену и отвечает за результат.<div class="sw" style="margin-top:8px;background:#fff"><div><b>Без супервайзера</b><small>только по вашей просьбе</small></div><div class="tg ${svOff?"on":""}" data-tg="sv"></div></div></div></div>`:""}
+    <div class="sw"><div><b>Срочный заказ</b><small>до начала меньше 12 часов</small></div><div class="tg ${urgent?"on":""}" data-tg="urgent"></div></div>
+    <div class="total">
+      <div class="l"><span>Персонал</span><span>${rub(c.base)}</span></div>
+      ${urgent?`<div class="l"><span>Срочность +30%</span><span>${rub(c.extra)}</span></div>`:""}
+      ${c.dog?`<div class="l"><span>Договорные позиции</span><span>после заявки</span></div>`:""}
+      <div class="big"><span>Итого</span><b>${rub(c.total)}</b></div>
+    </div>
+    <p class="note">Предварительный расчёт без НДС. Итог фиксируем в договоре после проверки менеджером.</p>`;
+}
+function count(){ const n=Object.keys(cart).length; document.querySelectorAll(".cnt").forEach(e=>e.textContent=n); }
+
+// ---------- Навигация и кнопка ----------
+let screen="home";
+function go(s){
+  screen=s; document.querySelectorAll(".screen").forEach(e=>e.classList.toggle("on",e.id===s));
+  ({home:renderHome,catalog:renderCatalog,item:renderItem,cart:renderCart}[s]||(()=>{}))();
+  count(); mainBtn(); window.scrollTo(0,0);
+  if (tg && tg.BackButton) s==="home"||s==="done" ? tg.BackButton.hide() : tg.BackButton.show();
+}
+function mainBtn(){
+  const c=calc(), m=$("#main"), b=$("#mainBtn"); m.classList.remove("hide"); b.classList.remove("dark");
+  const set=(l,r)=>{ $("#mainL").textContent=l; $("#mainR").textContent=r||""; };
+  if(screen==="home") set("Открыть каталог", Object.keys(cart).length?`в смете ${Object.keys(cart).length}`:"");
+  else if(screen==="catalog") Object.keys(cart).length ? set("Смета", rub(c.total)) : set("Выберите услуги","");
+  else if(screen==="item") set(cart[cur]?"Сохранить":"Добавить в смету", byId(cur).price?rub(byId(cur).price*_draft.p*_draft.h):"");
+  else if(screen==="cart") Object.keys(cart).length ? set("Оформить заявку", rub(c.total)) : set("В каталог","");
+  else if(screen==="form") { set("Отправить заявку", rub(c.total)); }
+  else if(screen==="done") { b.classList.add("dark"); set("Новая смета",""); }
+}
+$("#mainBtn").onclick = () => {
+  haptic();
+  if(screen==="home") go("catalog");
+  else if(screen==="catalog") Object.keys(cart).length ? go("cart") : toast("Добавьте хотя бы одну услугу");
+  else if(screen==="item"){ cart[cur]={..._draft}; toast("Добавлено в смету"); go("catalog"); }
+  else if(screen==="cart") Object.keys(cart).length ? go("form") : go("catalog");
+  else if(screen==="form") send();
+  else if(screen==="done"){ cart={}; urgent=false; svOff=false; go("home"); }
+};
+function send(){
+  const c=calc(), num=String(Math.floor(Math.random()*9000)+1000);
+  const data={num, lines:c.lines.map(l=>({id:l.s.id,name:l.s.name,people:l.p,hours:l.h,sum:l.sum})), urgent, supervisor:!svOff, total:c.total,
+    event:{format:$("#f_fmt").value,date:$("#f_date").value,time:$("#f_time").value,place:$("#f_place").value,dress},
+    contact:{name:$("#f_name").value,contact:$("#f_contact").value,comment:$("#f_comm").value}};
+  const finish = () => { $("#tNum").textContent="№ "+num; $("#tSum").textContent=rub(c.total); go("done"); };
+  if (!(tg && tg.initData)) { finish(); return; }          // открыто в браузере – демо без отправки
+  $("#mainL").textContent="Отправляем…";
+  fetch(API_URL+"/lead", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({initData:tg.initData, data})})
+    .then(r => { if(!r.ok) throw 0; finish(); })
+    .catch(() => {                                         // запасной путь – через сообщение боту
+      try { tg.sendData(JSON.stringify(data)); } catch(e) { toast("Не удалось отправить, попробуйте ещё раз"); mainBtn(); }
+    });
+}
+if (tg && tg.BackButton) tg.BackButton.onClick(()=>({catalog:"home",item:"catalog",cart:"catalog",form:"cart"})[screen] && go({catalog:"home",item:"catalog",cart:"catalog",form:"cart"}[screen]));
+
+// ---------- Клики ----------
+document.addEventListener("click", e => {
+  const t=e.target.closest("[data-go],[data-add],[data-open],[data-tab],[data-st],[data-tg],[data-preset],[data-edit],#dress button"); if(!t) return;
+  if(t.dataset.go) go(t.dataset.go);
+  else if(t.dataset.add){ e.stopPropagation(); const id=t.dataset.add; if(cart[id]){ delete cart[id]; toast("Убрано из сметы"); } else { cur=id; go("item"); return; } haptic(); go(screen); }
+  else if(t.dataset.open){ cur=t.dataset.open; go("item"); }
+  else if(t.dataset.tab){ tab=t.dataset.tab; renderCatalog(); }
+  else if(t.dataset.st){ const [k,d]=t.dataset.st.split(","); _draft[k]=Math.max(1,Math.min(k==="h"?24:50,_draft[k]+ +d)); $("#v"+k).textContent=_draft[k];
+    const s=byId(cur); document.querySelector("#item .sum").innerHTML=`<span>${s.price?`${rub(s.price)} × ${_draft.p} чел × ${_draft.h} ч`:"Стоимость"}</span><b>${s.price?rub(s.price*_draft.p*_draft.h):"Договорная"}</b>`; mainBtn(); haptic(); }
+  else if(t.dataset.tg){ if(t.dataset.tg==="urgent") urgent=!urgent; else svOff=!svOff; renderCart(); mainBtn(); haptic(); }
+  else if(t.dataset.preset){ cart={}; Object.entries(PRESETS[t.dataset.preset]).forEach(([id,[p,h]])=>cart[id]={p,h}); toast(`Шаблон «${t.dataset.preset}» в смете`); go("cart"); }
+  else if(t.dataset.edit){ cur=t.dataset.edit; go("item"); }
+  else if(t.closest("#dress")){ document.querySelectorAll("#dress button").forEach(b=>b.classList.toggle("on",b===t)); dress=t.dataset.d; }
+});
+
+// ---------- Демо-состояния для макетов: index.html#cart, #item, #form, #done ----------
+const h=(location.hash||"#home").slice(1);
+if(["catalog","item","cart","form","done"].includes(h)){ cart={"06":{p:3,h:6},"01":{p:6,h:8},"03":{p:1,h:8}}; cur="03"; }
+if(h==="cart2"){ cart={"06":{p:3,h:6},"01":{p:6,h:8},"08":{p:1,h:8}}; urgent=true; go("cart"); }
+else if(h==="done"){ $("#tNum").textContent="№ 2741"; $("#tSum").textContent=rub(calc().total); go("done"); }
+else go(["home","catalog","item","cart","form"].includes(h)?h:"home");
+</script>
+</body></html>
