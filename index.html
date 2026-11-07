@@ -1,128 +1,280 @@
 <!doctype html>
-<html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3EFE6">
 <title>T&amp;R – смета</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <style>
-/* Фирменные цвета T&R (гамма Wine) */
-:root{ --ink:#0E0E10; --paper:#F3EFE6; --wine:#8A2B25; --wl:#B5463B; --stone:#D6D0C4; --sand:#E9E4D8; --line:#DDD6C9; --mute:#77736B; --graphite:#2A2A2E }
+/* ===== Фирменные цвета T&R, гамма Wine ===== */
+:root{
+  --ink:#0E0E10; --paper:#F3EFE6; --wine:#8A2B25; --wl:#B5463B; --wine-50:#F5E4E1;
+  --stone:#D6D0C4; --sand:#E9E4D8; --card:#FAF7F1; --line:#E0D9CC; --mute:#66625A; --graphite:#2A2A2E;
+  --r:18px; --tap:44px; --tabs:64px; --mainh:56px;
+  --ease-out:cubic-bezier(.23,1,.32,1); --ease-drawer:cubic-bezier(.32,.72,0,1); --ease-io:cubic-bezier(.77,0,.175,1);
+}
 *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
-html,body{ background:var(--paper); color:var(--ink); font:500 15px/1.4 Manrope,system-ui,sans-serif }
-body{ max-width:430px; margin:0 auto; min-height:100vh; position:relative }
-button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
-.mono{ font:500 11px "JetBrains Mono",monospace; letter-spacing:.12em; text-transform:uppercase }
+html,body{ background:var(--paper); color:var(--ink); font:500 15px/1.42 Manrope,system-ui,sans-serif; overscroll-behavior:none; -webkit-text-size-adjust:100% }
+body{ max-width:440px; margin:0 auto; min-height:100vh; min-height:100dvh; position:relative; overflow-x:hidden }
+button,input,textarea,select{ font:inherit; color:inherit }
+button{ background:none; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; transition:transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms, border-color 160ms, opacity 160ms }
+button:active{ transform:scale(.97) }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{ outline:2px solid var(--wine); outline-offset:2px }
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{ outline:none }
+.mono{ font:500 11.5px/1.3 "JetBrains Mono",monospace; letter-spacing:.12em; text-transform:uppercase }
 .amp{ font-family:"Instrument Serif",serif; font-style:italic; font-weight:400; color:var(--wine); text-transform:none; letter-spacing:0 }
-.screen{ display:none; padding:16px 16px 120px; min-height:100vh }
-.screen.on{ display:block }
-.bar{ display:flex; align-items:center; justify-content:space-between; height:44px; margin-bottom:8px }
-.bar img{ height:20px }
-.bar .back{ width:36px; height:36px; border-radius:50%; background:var(--sand); font:700 18px Manrope }
-.bar .cartbtn{ position:relative; height:36px; padding:0 14px; border-radius:20px; background:var(--ink); color:var(--paper); font:700 13px Manrope; display:flex; align-items:center; gap:8px }
-.bar .cartbtn i{ font-style:normal; background:var(--wl); border-radius:10px; min-width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-size:11px }
-h1{ font:900 30px/.98 Unbounded; text-transform:uppercase; letter-spacing:-.02em }
-h1 .amp{ font-size:38px; line-height:.7 }
-h2{ font:800 18px/1.1 Unbounded; text-transform:uppercase; letter-spacing:-.01em }
-.sub{ color:var(--graphite); margin-top:10px; font-size:15px }
-.lbl{ color:var(--mute); display:block; margin:22px 0 10px }
-.ico{ width:30px; height:30px; stroke:var(--ink); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none }
+h1{ font:900 28px/1 Unbounded; text-transform:uppercase; letter-spacing:-.02em }
+h1 .amp{ font-size:1.3em; line-height:.7 }
+h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01em }
+.h3{ font:800 15px/1.25 Manrope; display:block }
+.sub{ color:var(--graphite); margin-top:8px }
+.muted{ color:var(--mute) }
+.lbl{ display:flex; justify-content:space-between; align-items:center; color:var(--mute); margin:22px 0 10px }
+.ico{ width:26px; height:26px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none }
 .ico .a{ stroke:var(--wine) } .ico .f{ fill:var(--wine); stroke:none }
+.ui{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
 
-/* главный экран */
-.hero{ background:var(--ink); color:var(--paper); border-radius:24px; padding:22px 20px 20px; position:relative; overflow:hidden }
-.hero .bigamp{ position:absolute; right:-24px; top:-60px; font:italic 400 230px/1 "Instrument Serif"; color:var(--wl); opacity:.22 }
-.hero img{ height:30px; position:relative; filter:brightness(0) invert(1) }
-.hero .mono{ color:#8D8A84 }
-.hero h1{ margin-top:34px; position:relative } .hero h1 .amp{ color:var(--wl) }
-.hero p{ color:#C9C4BA; margin-top:10px; position:relative }
-.steps3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px }
-.steps3 div{ background:var(--sand); border-radius:16px; padding:12px }
-.steps3 b{ display:block; font:900 20px Unbounded; color:var(--wine) }
-.steps3 span{ font-size:12px; color:var(--graphite); line-height:1.3; display:block; margin-top:4px }
-.quick{ display:flex; gap:8px; flex-wrap:wrap }
-.chip{ border:1.5px solid var(--stone); border-radius:20px; padding:9px 14px; font:700 13px Manrope; background:#F8F5EE }
+/* ===== каркас ===== */
+.screen{ display:none; padding:0 16px; padding-bottom:calc(var(--mainh) + var(--tabs) + 40px); min-height:100vh }
+.screen.on{ display:block; animation:fwd 260ms var(--ease-out) }
+.screen.on.back{ animation-name:bwd }
+.screen.on.fade{ animation-name:fade }
+.screen.flow{ padding-bottom:calc(var(--mainh) + 110px) }
+@keyframes fwd{ from{ opacity:0; transform:translateX(16px) } to{ opacity:1; transform:none } }
+@keyframes bwd{ from{ opacity:0; transform:translateX(-16px) } to{ opacity:1; transform:none } }
+@keyframes fade{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes bump{ 0%{ transform:scale(1) } 40%{ transform:scale(1.06) } 100%{ transform:scale(1) } }
+@keyframes tick{ from{ opacity:.2; transform:translateY(5px) } to{ opacity:1; transform:none } }
+@keyframes pop{ from{ opacity:0; transform:scale(.9) } to{ opacity:1; transform:none } }
+@keyframes drop{ 0%{ opacity:0; transform:translateY(-34px) rotate(-9deg) scale(.96) } 70%{ opacity:1; transform:translateY(3px) rotate(-1.8deg) } 100%{ transform:rotate(-2.5deg) } }
+@keyframes rise{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+@keyframes shake{ 0%,100%{ transform:none } 25%{ transform:translateX(-4px) } 75%{ transform:translateX(4px) } }
+.bump{ animation:bump 280ms var(--ease-out) }
+.tick{ animation:tick 180ms var(--ease-out) }
+.ticket.drop{ animation:drop 700ms var(--ease-out) both }
+.tl.rise > div{ animation:rise 360ms var(--ease-out) both }
+.tl.rise > div:nth-child(2){ animation-delay:80ms } .tl.rise > div:nth-child(3){ animation-delay:160ms } .tl.rise > div:nth-child(4){ animation-delay:240ms }
+.field.err{ animation:shake 260ms var(--ease-out) }
+.cat .ck svg, .chip svg{ animation:pop 200ms var(--ease-out) }
+.steps i{ position:relative; overflow:hidden }
+.steps i:after{ content:""; position:absolute; inset:0; background:var(--ink); transform:scaleX(0); transform-origin:left; transition:transform 360ms var(--ease-out) }
+.steps .done i:after{ transform:scaleX(1) } .steps .cur i:after{ transform:scaleX(1); background:var(--wine) }
+@media (prefers-reduced-motion: reduce){
+  .screen.on,.screen.on.back{ animation-name:fade; animation-duration:160ms }
+  .sheet{ transition:opacity 200ms; } .sheet:not(.on){ opacity:0 }
+  .ticket.drop,.tl.rise > div,.bump,.tick,.field.err{ animation:fade 200ms both }
+  button:active{ transform:none }
+}
+.top{ position:sticky; top:0; z-index:5; background:var(--paper); margin:0 -16px; padding:10px 16px 10px; display:flex; align-items:center; gap:10px }
+.top .t{ flex:1; min-width:0 }
+.top .mark{ height:22px; display:block }
+.iconbtn{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; flex:none }
+.pill{ height:36px; padding:0 14px; border-radius:20px; background:var(--ink); color:var(--paper); font:700 13px Manrope; display:inline-flex; align-items:center; gap:8px }
+.badge{ min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--wine); color:var(--paper); font:800 11px/20px Manrope; text-align:center; display:inline-block }
+
+/* шаги */
+.steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 18px }
+.steps button{ text-align:left; padding:0 }
+.steps i{ display:block; height:4px; border-radius:2px; background:var(--stone) }
+.steps span{ display:block; margin-top:6px; font:700 11px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase; color:var(--mute) }
+.steps .done span{ color:var(--ink) }
+.steps .cur span{ color:var(--wine) }
+
+/* карточки и поля */
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px }
+.dark{ background:var(--ink); color:var(--paper); border:0 }
+.dark .muted{ color:#9C978D } .dark .amp{ color:var(--wl) }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.field{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:9px 14px 10px; display:block; position:relative }
+.field:focus-within{ border-color:var(--ink) }
+.field.err{ border-color:var(--wine); background:var(--wine-50) }
+.field .k{ display:block; color:var(--mute); font:500 11px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase }
+.field input,.field textarea,.field select{ width:100%; border:0; background:none; outline:none; font:700 16px Manrope; margin-top:2px; resize:none; appearance:none; -webkit-appearance:none; min-height:26px }
+.field .hint{ position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mute); font-size:13px }
+.errtxt{ color:var(--wine); font-size:12px; margin:4px 4px 0; display:none }
+.field.err + .errtxt{ display:block }
+.chips{ display:flex; flex-wrap:wrap; gap:8px }
+.chip{ min-height:40px; padding:0 15px; border-radius:20px; border:1.5px solid var(--line); background:var(--card); font:700 14px Manrope; display:inline-flex; align-items:center; gap:7px }
 .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink) }
+.chip .ico{ width:20px; height:20px }
+.chip.on .ico{ stroke:var(--paper) } .chip.on .ico .a{ stroke:var(--wl) }
+.seg{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--sand); border-radius:14px; padding:4px }
+.seg button{ min-height:40px; border-radius:11px; font:700 14px Manrope; color:var(--graphite) }
+.seg button.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(14,14,16,.12) }
 
-/* каталог */
-.tabs{ display:flex; gap:6px; overflow-x:auto; margin:14px -16px 6px; padding:0 16px; scrollbar-width:none }
-.tabs::-webkit-scrollbar{ display:none }
-.tabs .chip{ white-space:nowrap }
-.svc{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:8px }
-.svc .ib{ width:44px; height:44px; border-radius:14px; background:var(--sand); display:flex; align-items:center; justify-content:center }
-.svc .n{ font:700 10px "JetBrains Mono"; color:var(--wine); letter-spacing:.1em }
-.svc b{ display:block; font:800 15px/1.2 Manrope; margin-top:1px }
-.svc small{ display:block; color:var(--mute); font-size:12px; margin-top:2px }
-.svc .p{ text-align:right; font:800 14px Unbounded; white-space:nowrap }
-.svc .p span{ display:block; font:500 10px "JetBrains Mono"; color:var(--mute); letter-spacing:.06em; margin-top:2px }
-.svc .add{ width:34px; height:34px; border-radius:50%; background:var(--wine); color:var(--paper); font:700 20px/34px Manrope; text-align:center; margin-left:auto; margin-top:6px }
-.svc.in{ border-color:var(--wine); box-shadow:inset 0 0 0 1px var(--wine) }
-.svc.in .add{ background:var(--ink) }
-.opt{ display:inline-block; border:1px solid var(--wine); color:var(--wine); border-radius:12px; padding:1px 7px; font:700 9px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase; vertical-align:2px; margin-left:4px }
+/* степпер */
+.stepper{ display:flex; align-items:center; gap:4px }
+.stepper button{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.stepper button.pl{ background:var(--ink); color:var(--paper) }
+.stepper button:disabled{ opacity:.35 }
+.stepper output{ min-width:44px; text-align:center; font:900 20px Unbounded }
+.row{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:var(--tap) }
+.range{ width:100%; accent-color:var(--wine); height:28px }
 
-/* карточка услуги */
-.ihead{ display:flex; gap:14px; align-items:center }
-.ihead .ib{ width:60px; height:60px; border-radius:18px; background:var(--ink); display:flex; align-items:center; justify-content:center }
-.ihead .ib .ico{ stroke:var(--paper) } .ihead .ib .ico .a{ stroke:var(--wl) } .ihead .ib .ico .f{ fill:var(--wl) }
-.incl{ list-style:none; display:flex; flex-wrap:wrap; gap:6px; margin-top:12px }
-.incl li{ background:var(--sand); border-radius:12px; padding:6px 10px; font:600 12px Manrope }
-.stp{ display:flex; align-items:center; justify-content:space-between; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:12px 14px; margin-bottom:8px }
-.stp b{ font:800 15px Manrope } .stp small{ display:block; color:var(--mute); font-size:12px }
-.stp .ctl{ display:flex; align-items:center; gap:12px }
-.stp .ctl button{ width:38px; height:38px; border-radius:50%; background:var(--sand); font:700 20px Manrope }
-.stp .ctl button.pl{ background:var(--ink); color:var(--paper) }
-.stp .ctl span{ min-width:30px; text-align:center; font:900 20px Unbounded }
-.sum{ display:flex; justify-content:space-between; align-items:baseline; border-top:1.5px solid var(--ink); padding-top:12px; margin-top:14px }
-.sum b{ font:900 26px Unbounded } .sum span{ color:var(--mute) }
-.note{ font-size:12px; color:var(--mute); margin-top:8px; line-height:1.4 }
+/* плашки */
+.note{ display:flex; gap:10px; align-items:flex-start; background:var(--sand); border-radius:16px; padding:12px 14px; font-size:13px; line-height:1.4 }
+.note .ui{ width:18px; height:18px; color:var(--wine); margin-top:1px }
+.note.wine{ background:var(--wine-50) }
+.tag{ display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:12px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; background:var(--sand); color:var(--graphite) }
+.tag.w{ background:var(--wine); color:var(--paper) } .tag.o{ background:none; border:1px solid var(--wine); color:var(--wine) }
+.tag.g{ background:#E3EDE4; color:#2F5B36 }
 
-/* смета */
-.row{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line) }
-.row b{ font:800 14px Manrope } .row small{ display:block; color:var(--mute); font:500 11px "JetBrains Mono"; letter-spacing:.04em; margin-top:2px }
-.row .s{ font:800 14px Unbounded; white-space:nowrap; text-align:right }
-.row .s em{ display:block; font:600 10px Manrope; font-style:normal; color:var(--wine) }
-.row .ico{ width:26px; height:26px }
-.auto{ background:var(--sand); border-radius:16px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px }
-.auto i{ font-style:normal; color:var(--wine); font-size:15px }
-.sw{ display:flex; justify-content:space-between; align-items:center; background:#F8F5EE; border:1px solid var(--line); border-radius:18px; padding:13px 14px; margin-top:8px }
-.sw b{ font:800 14px Manrope } .sw small{ display:block; color:var(--mute); font-size:12px }
-.tg{ width:46px; height:28px; border-radius:14px; background:var(--stone); position:relative; flex:none }
-.tg:after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.2s }
-.tg.on{ background:var(--wine) } .tg.on:after{ left:21px }
-.total{ background:var(--ink); color:var(--paper); border-radius:22px; padding:18px; margin-top:14px }
-.total .l{ display:flex; justify-content:space-between; font-size:13px; color:#C9C4BA; padding:3px 0 }
-.total .big{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #2A2A2E; margin-top:10px; padding-top:12px }
-.total .big b{ font:900 30px Unbounded } .total .big span{ font:700 12px "JetBrains Mono"; letter-spacing:.1em; color:#8D8A84; text-transform:uppercase }
-.empty{ text-align:center; padding:60px 20px; color:var(--mute) }
+/* главная */
+.hero{ background:var(--ink); color:var(--paper); border-radius:24px; padding:20px; position:relative; overflow:hidden; margin-top:4px }
+.hero .big{ position:absolute; right:-20px; top:-56px; font:italic 400 220px/1 "Instrument Serif"; color:var(--wl); opacity:.22; pointer-events:none }
+.hero .logo{ height:30px; position:relative; display:block }
+.hero h1{ margin-top:26px; position:relative; font-size:27px } .hero h1 .amp{ color:var(--wl) }
+.hero p{ color:#C9C4BA; margin-top:10px; position:relative; font-size:14px }
+.acts{ display:grid; grid-template-columns:1.25fr 1fr; gap:8px; margin-top:8px }
+.act{ border-radius:20px; padding:16px; text-align:left; min-height:120px; display:flex; flex-direction:column; justify-content:space-between }
+.act b{ font:800 16px/1.2 Unbounded; text-transform:uppercase; display:block; margin-top:14px }
+.act span{ font-size:12.5px; opacity:.85; margin-top:4px; display:block }
+.act.w{ background:var(--wine); color:var(--paper) } .act.s{ background:var(--sand) }
+.how{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px }
+.how div{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 8px }
+.how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
+.how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
+.trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
+.mgr{ display:flex; align-items:center; gap:12px }
+.ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
 
-/* заявка */
-.fld{ background:#F8F5EE; border:1px solid var(--line); border-radius:16px; padding:10px 14px; margin-bottom:8px }
-.fld label{ display:block; color:var(--mute); font:500 10px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase }
-.fld input,.fld textarea{ width:100%; border:0; background:none; font:700 15px Manrope; color:var(--ink); outline:none; margin-top:3px; resize:none }
-.two{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+/* шаг 1 */
+.fmt{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.fmt button{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; font:700 12.5px Manrope; min-height:86px; justify-content:center }
+.fmt button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.fmt .ico{ width:28px; height:28px }
+.guests{ display:flex; align-items:baseline; gap:8px }
+.guests b{ font:900 34px/1 Unbounded } .guests span{ color:var(--mute) }
+.until{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px }
+
+/* шаг 2 */
+.rec{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px; position:relative; overflow:hidden }
+.rec .big{ position:absolute; right:-14px; bottom:-70px; font:italic 400 180px/1 "Instrument Serif"; color:var(--wl); opacity:.18 }
+.rec ul{ list-style:none; margin-top:12px; position:relative }
+.rec li{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #2A2A2E; font-size:14px }
+.rec li em{ font-style:normal; color:#9C978D; font-size:12.5px; white-space:nowrap }
+.rec .why{ font-size:12.5px; color:#C9C4BA; margin-top:10px; position:relative }
+.rec .btns{ display:flex; gap:8px; margin-top:14px; position:relative }
+.btn{ min-height:var(--tap); border-radius:14px; padding:0 16px; font:800 14px Manrope; display:inline-flex; align-items:center; justify-content:center; gap:8px }
+.btn.w{ background:var(--wine); color:var(--paper) } .btn.k{ background:var(--ink); color:var(--paper) }
+.btn.s{ background:var(--sand) } .btn.l{ background:transparent; color:inherit; border:1.5px solid currentColor }
+.btn.full{ width:100% }
+.team .item{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; margin-bottom:8px; text-align:left; width:100% }
+.ib{ width:44px; height:44px; border-radius:14px; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.item b{ display:block; font:800 14.5px/1.2 Manrope }
+.item small{ display:block; color:var(--mute); font:500 11.5px/1.35 "JetBrains Mono"; margin-top:3px }
+.item .s{ text-align:right; font:800 14px Unbounded; white-space:nowrap }
+.item .s em{ display:block; font:700 11px Manrope; font-style:normal; color:var(--wine); margin-top:3px }
+.add{ width:100%; min-height:56px; border-radius:var(--r); border:1.5px dashed var(--stone); display:flex; align-items:center; justify-content:center; gap:8px; font:800 14px Manrope; color:var(--graphite) }
+.empty{ text-align:center; padding:26px 10px; color:var(--mute) }
+.empty .amp{ font-size:80px; line-height:1; display:block }
+
+/* шторка */
+.veil{ position:fixed; inset:0; background:rgba(14,14,16,.42); z-index:20; opacity:0; pointer-events:none; transition:opacity 300ms var(--ease-out) }
+.veil.on{ opacity:1; pointer-events:auto }
+.sheet{ position:fixed; left:50%; bottom:0; transform:translate(-50%,105%); width:100%; max-width:440px; max-height:88vh; background:var(--paper); border-radius:26px 26px 0 0; z-index:21; transition:transform 420ms var(--ease-drawer); display:flex; flex-direction:column; will-change:transform }
+.sheet.closing{ transition-duration:240ms }
+.sheet.drag{ transition:none }
+.sheet .grab{ touch-action:none; cursor:grab; padding-top:2px }
+.sheet.on{ transform:translate(-50%,0) }
+.sheet .grip{ width:40px; height:5px; border-radius:3px; background:var(--stone); margin:8px auto 0 }
+.sheet .sh{ display:flex; align-items:center; gap:12px; padding:12px 16px 8px }
+.sheet .sb{ overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 16px; -webkit-overflow-scrolling:touch }
+.sheet .sf{ padding:10px 16px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--paper) }
+.cat{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); width:100%; text-align:left }
+.cat b{ display:block; font:800 14.5px Manrope } .cat small{ color:var(--mute); font-size:12px }
+.cat .p{ text-align:right; font:800 13px Unbounded; white-space:nowrap }
+.cat .p span{ display:block; font:500 11px "JetBrains Mono"; color:var(--mute); margin-top:2px; letter-spacing:.05em }
+.cat .ck{ width:28px; height:28px; border-radius:50%; border:1.5px solid var(--stone); display:flex; align-items:center; justify-content:center; margin:6px 0 0 auto }
+.cat.in .ck{ background:var(--wine); border-color:var(--wine); color:var(--paper) }
+.shift{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:8px }
+.shift .head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px }
+.shift .row + .row{ border-top:1px solid var(--line) }
+.incl{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
+.incl span{ background:var(--sand); border-radius:12px; padding:5px 10px; font:600 12px Manrope }
+
+/* шаг 3 */
+.est .ln{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); align-items:start }
+.est .ln .ico{ width:24px; height:24px; margin-top:1px }
+.est .ln b{ font:800 14px Manrope } .est .ln small{ display:block; color:var(--mute); font:500 11px/1.5 "JetBrains Mono" }
+.est .ln .s{ font:800 14px Unbounded; white-space:nowrap; text-align:right }
+.tot{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px 18px; margin-top:14px }
+.tot .l{ display:flex; justify-content:space-between; font-size:13px; color:#C9C4BA; padding:3px 0 }
+.tot .l.w{ color:#F0C9C3 }
+.tot .big{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #2A2A2E; margin-top:10px; padding-top:12px }
+.tot .big b{ font:900 30px Unbounded; display:inline-block } .tot .big span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.1em; color:#9C978D; text-transform:uppercase }
+.sw{ width:50px; height:30px; border-radius:15px; background:var(--stone); position:relative; flex:none; transition:.2s }
+.sw:after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.2s; box-shadow:0 1px 2px rgba(0,0,0,.2) }
+.sw.on{ background:var(--wine) } .sw.on:after{ left:23px }
+
+/* шаг 4 */
 .dress{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
-.dress button{ text-align:left; background:#F8F5EE; border:1.5px solid var(--line); border-radius:16px; padding:12px }
+.dress button{ text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px; min-height:76px }
 .dress button b{ display:block; font:800 14px Manrope } .dress button span{ font-size:12px; color:var(--mute) }
-.dress button.on{ border-color:var(--wine); background:#fff }
+.dress button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.sw-dot{ width:18px; height:18px; border-radius:50%; display:inline-block; margin-bottom:6px; border:1.5px solid var(--line) }
 
 /* готово */
-.ticket{ margin-top:26px; background:var(--wine); color:var(--paper); border-radius:24px; display:flex; position:relative; transform:rotate(-3deg) }
-.ticket:before,.ticket:after{ content:""; position:absolute; right:84px; width:24px; height:24px; border-radius:50%; background:var(--paper) }
-.ticket:before{ top:-12px } .ticket:after{ bottom:-12px }
-.ticket .l{ flex:1; padding:22px; border-right:2px dashed rgba(243,239,230,.6) }
-.ticket .l b{ display:block; font:900 34px Unbounded } .ticket .l span{ font:700 11px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase; color:#F0C9C3 }
-.ticket .r{ width:96px; display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; transform:rotate(180deg); font:700 11px "JetBrains Mono"; letter-spacing:.14em; text-transform:uppercase }
-.next{ margin-top:30px }
-.next div{ display:grid; grid-template-columns:34px 1fr; gap:10px; padding:12px 0; border-bottom:1px solid var(--line) }
-.next b{ font:900 18px Unbounded; color:var(--wine) }
+.ticket{ margin:22px 4px 0; background:var(--wine); color:var(--paper); border-radius:22px; display:flex; position:relative; transform:rotate(-2.5deg); box-shadow:0 14px 30px rgba(14,14,16,.16) }
+.ticket:before,.ticket:after{ content:""; position:absolute; right:78px; width:22px; height:22px; border-radius:50%; background:var(--paper) }
+.ticket:before{ top:-11px } .ticket:after{ bottom:-11px }
+.ticket .l{ flex:1; padding:20px; border-right:2px dashed rgba(243,239,230,.55) }
 
-/* нижняя кнопка (как MainButton Telegram) */
-.main{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:430px; padding:12px 16px calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(transparent,var(--paper) 30%) }
-.main button{ width:100%; height:54px; border-radius:16px; background:var(--wine); color:var(--paper); font:800 15px Unbounded; display:flex; align-items:center; justify-content:space-between; padding:0 18px }
-.main button span{ font:700 13px Manrope; opacity:.85 }
-.main button.dark{ background:var(--ink) }
+.ticket .l b{ display:block; font:900 32px Unbounded; margin:4px 0 } .ticket .l span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase; color:#F0C9C3 }
+.ticket .r{ width:88px; display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; transform:rotate(180deg); font:700 11px "JetBrains Mono"; letter-spacing:.14em; text-transform:uppercase }
+.tl{ margin-top:26px; position:relative }
+.tl > div{ display:grid; grid-template-columns:28px 1fr; gap:12px; padding-bottom:16px; position:relative }
+.tl > div:not(:last-child):before{ content:""; position:absolute; left:13px; top:28px; bottom:0; width:2px; background:var(--line) }
+.tl > div > i{ width:28px; height:28px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font-style:normal; font:800 12px Manrope; color:var(--mute) }
+.tl .ok > i{ background:var(--ink); color:var(--paper) } .tl .now > i{ background:var(--wine); color:var(--paper); box-shadow:0 0 0 5px var(--wine-50) }
+.tl b{ display:block; font-size:14px } .tl div div span{ font-size:12.5px; color:var(--mute) }
+
+/* мои заявки */
+.ord{ width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:8px; display:block }
+.ord .h{ display:flex; justify-content:space-between; align-items:center }
+.ord .m{ display:flex; justify-content:space-between; align-items:baseline; margin-top:10px }
+.ord .m b{ font:900 18px Unbounded }
+
+/* анкета */
+.photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.ph{ aspect-ratio:3/4; border-radius:16px; border:1.5px dashed var(--stone); background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--mute); font-size:12px; position:relative; overflow:hidden }
+.ph img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.ph input{ position:absolute; inset:0; opacity:0; cursor:pointer }
+
+/* у менеджера (демо) */
+.tgchat{ background:#0F1A24; border-radius:22px; padding:14px; margin-top:12px }
+.tgmsg{ background:#182533; color:#E9EEF3; border-radius:16px 16px 16px 4px; padding:12px 14px; font:500 13.5px/1.45 -apple-system,system-ui,sans-serif }
+.tgmsg b{ font-weight:700 } .tgmsg .bot{ color:#6AB2F2; font-weight:700; margin-bottom:6px; display:block }
+.tgbtns{ display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px }
+.tgbtns button{ background:#1E2C3A; color:#E9EEF3; border-radius:10px; min-height:40px; font:600 13px -apple-system,system-ui,sans-serif }
+.tgbtns button.full{ grid-column:1/-1 }
+
+/* нижняя панель */
+.dock{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:440px; z-index:10; background:linear-gradient(rgba(243,239,230,0),var(--paper) 22%); padding-top:18px }
+.main{ padding:0 16px 10px }
+.main button{ width:100%; height:var(--mainh); border-radius:16px; background:var(--wine); color:var(--paper); display:flex; align-items:center; justify-content:space-between; padding:0 18px; font:800 15px Unbounded; box-shadow:0 6px 18px rgba(14,14,16,.16) }
+.main button span:last-child{ font:700 14px Manrope; opacity:.9 }
+.main button.k{ background:var(--ink); box-shadow:none }
+.main button.off{ background:var(--stone); color:var(--graphite); box-shadow:none }
+.main button.busy{ opacity:.75; pointer-events:none }
+.main button.busy #mainL:after{ content:""; display:inline-block; width:14px; height:14px; margin-left:10px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; vertical-align:-2px; animation:spin 700ms linear infinite }
+@keyframes spin{ to{ transform:rotate(360deg) } }
 .main.hide{ display:none }
-.toast{ position:fixed; left:50%; top:16px; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:14px; padding:10px 14px; font:700 13px Manrope; display:none; z-index:9 }
-</style></head><body>
+.tabs{ display:grid; grid-template-columns:repeat(3,1fr); height:var(--tabs); border-top:1px solid var(--line); background:var(--paper); padding-bottom:env(safe-area-inset-bottom) }
+.tabs button{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font:700 11.5px Manrope; color:var(--mute); position:relative }
+.tabs button.on{ color:var(--ink) } .tabs button.on .ui{ color:var(--wine) }
+.tabs .badge{ position:absolute; top:6px; left:calc(50% + 6px); height:18px; min-width:18px; font-size:10px; line-height:18px }
+.tabs.hide{ display:none }
+.toast{ position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translate(-50%,-90px); opacity:0; background:var(--ink); color:var(--paper); border-radius:14px; padding:11px 16px; font:700 13px Manrope; z-index:40; transition:transform 300ms var(--ease-out), opacity 200ms; max-width:90%; text-align:center }
+.toast.on{ transform:translate(-50%,0); opacity:1 }
+</style>
+</head>
+<body>
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <!-- 01 Хелперы: рука помощи -->
@@ -152,236 +304,543 @@ h2{ font:800 18px/1.1 Unbounded; text-transform:uppercase; letter-spacing:-.01em
     <symbol id="h-job" viewBox="0 0 48 48"><circle cx="21" cy="16" r="6"/><path d="M9 40c0-9 5-15 12-15 3 0 5 1 7 2"/><path class="a" d="M36 28v12M30 34h12"/></symbol>
   </defs>
 </svg>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="u-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="u-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></symbol>
+    <symbol id="u-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></symbol>
+    <symbol id="u-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></symbol>
+    <symbol id="u-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="u-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="u-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="u-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="u-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="u-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="u-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></symbol>
+    <symbol id="u-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="u-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+    <symbol id="u-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="u-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+    <symbol id="u-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="u-repeat" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+    <symbol id="u-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  </defs>
+</svg>
 
-<!-- ========== 1. ГЛАВНАЯ ========== -->
-<section class="screen" id="home">
-  <div class="bar"><img src="mark-light-bg.svg" alt="T&amp;R"><span class="mono" style="color:var(--mute)">Смета онлайн</span></div>
-  <div class="hero"><div class="bigamp">&amp;</div>
-    <img src="logo-light-bg.svg" alt="T&amp;R Events Agency">
-    <h1>Посчитайте <br>команду <span class="amp">за минуту</span></h1>
-    <p>Выберите услуги, укажите людей и часы – бот сразу покажет стоимость и отправит заявку менеджеру.</p>
+<!-- ======================= ГЛАВНАЯ ======================= -->
+<section class="screen" id="s-home">
+  <div class="top"><div class="t"><svg style="height:22px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 453" fill="none"><path transform="translate(73.70 369.08)" fill="#0E0E10" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#8A2B25" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/></svg></div><span class="mono muted">Смета онлайн</span></div>
+  <div class="hero"><div class="big">&amp;</div>
+    <div class="logo"><svg style="height:100%;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 534" fill="none"><path transform="translate(73.70 369.08)" fill="#F3EFE6" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#B5463B" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/><path transform="translate(182.93 453.82)" fill="#F3EFE6" d="M3.00218505859375 0.0V-24.82H17.878907470703126V-21.117025634765625H7.181848388671876V-14.666251953125H16.688907470703125V-10.977386840820314H7.181848388671876V-3.7029743652343754H17.878907470703126V0.0H3.00218505859375Z M46.55549609375001 0.0 40.3027313232422 -24.82H44.69795764160157L48.456470458984384 -8.652176147460938Q48.739344482421885 -7.441117065429688 49.015508361816416 -6.077297668457032Q49.29167224121095 -4.713478271484376 49.42767224121095 -3.871806030273438Q49.563672241210945 -4.713478271484376 49.80294537353517 -6.077297668457032Q50.04221850585938 -7.441117065429688 50.32509252929688 -8.67206689453125L54.00982385253907 -24.82H58.297268676757824L52.07017614746095 0.0H46.55549609375001Z M81.20218505859377 0.0V-24.82H96.07890747070314V-21.117025634765625H85.3818483886719V-14.666251953125H94.88890747070315V-10.977386840820314H85.3818483886719V-3.7029743652343754H96.07890747070314V0.0H81.20218505859377Z M119.76327758789066 0.0V-24.82H124.93726867675784L131.84298327636722 -4.76344482421875Q131.7550925292969 -5.8521337890625 131.64025640869144 -7.33182275390625Q131.52542028808597 -8.811511718750001 131.45452954101566 -10.347637695312502Q131.38363879394535 -11.883763671875 131.38363879394535 -13.067982177734375V-24.82H135.2367224121094V0.0H130.06273132324222L123.21090747070315 -20.056555175781252Q123.29879821777347 -19.08142919921875 123.38668896484377 -17.69124755859375Q123.47457971191409 -16.301067993164065 123.5454704589844 -14.834559631347657Q123.61636120605472 -13.36805126953125 123.61636120605472 -12.149832763671876V0.0H119.76327758789066Z M164.47327758789066 0.0V-20.892445922851564H157.97163879394535V-24.83410925292969H175.22836120605473V-20.892445922851564H168.7267224121094V0.0H164.47327758789066Z M205.75643701171882 0.34Q203.20898327636723 0.34 201.34858416748054 -0.515781494140625Q199.4881850585938 -1.3715629882812501 198.47651281738288 -2.9413444824218753Q197.46484057617192 -4.5111259765625 197.45073132324225 -6.6589074707031255H201.704176147461Q201.704176147461 -5.146940917968751 202.80015942382818 -4.267793762207032Q203.89614270019536 -3.3886466064453127 205.81610925292975 -3.3886466064453127Q207.63985729980476 -3.3886466064453127 208.66784057617193 -4.243739135742188Q209.69582385253912 -5.098831665039063 209.69582385253912 -6.610798217773438Q209.69582385253912 -7.868109252929688 208.96644146728522 -8.791201782226564Q208.2370590820313 -9.714294311523439 206.90018505859382 -10.056840576171876L204.03145373535162 -10.832370117187502Q201.12342028808598 -11.594479370117188 199.52762207031256 -13.539878479003907Q197.9318238525391 -15.485277587890627 197.9318238525391 -18.225857299804687Q197.9318238525391 -20.33131103515625 198.89249609375005 -21.889874023437503Q199.853168334961 -23.448437011718752 201.60451281738287 -24.311274169921877Q203.35585729980474 -25.17410925292969 205.74487402343755 -25.17410925292969Q209.32712597656257 -25.17410925292969 211.4483065795899 -23.315327758789063Q213.56948718261725 -21.456546264648438 213.58359643554692 -18.331092529296875H209.33015161132818Q209.33015161132818 -19.789168334960937 208.3842775878907 -20.617314453125Q207.43840356445318 -21.445462646484376 205.69098327636723 -21.445462646484376Q204.01734448242195 -21.445462646484376 203.1013065795899 -20.662532958984375Q202.18526867675786 -19.87960534667969 202.18526867675786 -18.458075805664063Q202.18526867675786 -17.186655517578128 202.89186956787114 -16.273508361816408Q203.59847045898442 -15.360361206054689 204.90967224121098 -15.003705688476563L207.8720758056641 -14.194176147460938Q210.83145373535163 -13.432066894531252 212.39036120605473 -11.512340026855469Q213.94926867675787 -9.592613159179688 213.94926867675787 -6.778251953125Q213.94926867675787 -4.65868896484375 212.92765209960942 -3.0491259765625003Q211.90603344726568 -1.4395629882812502 210.0696889648438 -0.549781494140625Q208.23334448242193 0.34 205.75643701171882 0.34Z M274.9027313232423 0.0 281.1439331054689 -24.82H286.6303946533204L292.8972686767579 0.0H288.57004235839855L287.1966220703126 -6.019168334960938H280.6174871826173L279.24406689453133 0.0H274.9027313232423ZM281.3687224121095 -9.478361206054688H286.4113868408204L284.925092529297 -16.153714599609376Q284.5601092529298 -17.812555175781252 284.28394537353523 -19.165155029296876Q284.0077814941407 -20.517756958007816 283.9000000000001 -21.118882934570316Q283.79221850585947 -20.517756958007816 283.53594537353524 -19.17510144042969Q283.279672241211 -17.832445922851562 282.89479821777354 -16.187714599609375L281.3687224121095 -9.478361206054688Z M323.14594537353526 0.34Q320.75276477050795 0.34 318.9744749145509 -0.5597268676757813Q317.19618505859387 -1.4594537353515626 316.21562207031263 -3.114235229492188Q315.2350590820314 -4.769016723632813 315.2350590820314 -6.998907470703125V-17.821092529296877Q315.2350590820314 -20.08498327636719 316.21562207031263 -21.722764770507816Q317.19618505859387 -23.360546264648438 318.9744749145509 -24.26027416992188Q320.75276477050795 -25.16 323.14594537353526 -25.16Q325.5391259765626 -25.16 327.30041583251966 -24.253218505859376Q329.0617056884767 -23.346437011718752 330.0352140502931 -21.713158691406253Q331.0087224121095 -20.07988037109375 331.0087224121095 -17.821092529296877H326.75527758789076Q326.75527758789076 -19.57105908203125 325.8057076416017 -20.501207275390627Q324.85613873291027 -21.43135339355469 323.13230407714855 -21.43135339355469Q321.4084704589845 -21.43135339355469 320.4484871826173 -20.504220458984378Q319.4885039062501 -19.577087524414065 319.4885039062501 -17.835201782226562V-6.998907470703125Q319.4885039062501 -5.270361602783203 320.4484871826173 -4.322449478149414Q321.4084704589845 -3.3745373535156253 323.13230407714855 -3.3745373535156253Q324.85613873291027 -3.3745373535156253 325.8057076416017 -4.3245778503417975Q326.75527758789076 -5.274618347167969 326.75527758789076 -7.0070448303222665V-9.521857299804688H322.51890747070325V-13.20494091796875H331.0087224121095V-6.998907470703125Q331.0087224121095 -4.774869293212891 330.0352140502931 -3.1242161407470705Q329.0617056884767 -1.4735629882812502 327.30041583251966 -0.5667814941406251Q325.5391259765626 0.34 323.14594537353526 0.34Z M354.9021850585939 0.0V-24.82H369.7789074707033V-21.117025634765625H359.08184838867203V-14.666251953125H368.58890747070325V-10.977386840820314H359.08184838867203V-3.7029743652343754H369.7789074707033V0.0H354.9021850585939Z M393.4632775878908 0.0V-24.82H398.63726867675797L405.54298327636735 -4.76344482421875Q405.455092529297 -5.8521337890625 405.3402564086916 -7.33182275390625Q405.2254202880861 -8.811511718750001 405.1545295410158 -10.347637695312502Q405.0836387939455 -11.883763671875 405.0836387939455 -13.067982177734375V-24.82H408.93672241210953V0.0H403.76273132324235L396.9109074707033 -20.056555175781252Q396.9987982177736 -19.08142919921875 397.0866889648439 -17.69124755859375Q397.17457971191425 -16.301067993164065 397.2454704589845 -14.834559631347657Q397.31636120605486 -13.36805126953125 397.31636120605486 -12.149832763671876V0.0H393.4632775878908Z M440.4459453735353 0.34Q438.052764770508 0.34 436.274474914551 -0.5597268676757813Q434.49618505859394 -1.4594537353515626 433.5156220703127 -3.114235229492188Q432.53505908203147 -4.769016723632813 432.53505908203147 -6.998907470703125V-17.821092529296877Q432.53505908203147 -20.08498327636719 433.5156220703127 -21.722764770507816Q434.49618505859394 -23.360546264648438 436.274474914551 -24.26027416992188Q438.052764770508 -25.16 440.4459453735353 -25.16Q442.8391259765627 -25.16 444.60041583251973 -24.253218505859376Q446.3617056884768 -23.346437011718752 447.3352140502932 -21.713158691406253Q448.30872241210955 -20.07988037109375 448.30872241210955 -17.821092529296877H444.0552775878908Q444.0552775878908 -19.57105908203125 443.1057076416018 -20.501207275390627Q442.15613873291034 -21.43135339355469 440.4323040771486 -21.43135339355469Q438.70847045898455 -21.43135339355469 437.7484871826174 -20.504220458984378Q436.7885039062502 -19.577087524414065 436.7885039062502 -17.835201782226562V-6.998907470703125Q436.7885039062502 -5.263743286132813 437.7484871826174 -4.326194946289063Q438.70847045898455 -3.3886466064453127 440.4323040771486 -3.3886466064453127Q442.15613873291034 -3.3886466064453127 443.1057076416018 -4.326194946289063Q444.0552775878908 -5.263743286132813 444.0552775878908 -6.998907470703125H448.30872241210955Q448.30872241210955 -4.7831259765625 447.3352140502932 -3.128344482421875Q446.3617056884768 -1.4735629882812502 444.60041583251973 -0.5667814941406251Q442.8391259765627 0.34 440.4459453735353 0.34Z M477.27327758789085 0.0V-9.023420288085939L469.992185058594 -24.82H474.42719287109395L478.3029832763674 -16.211259765625Q478.75076477050806 -15.2021337890625 479.0583823852541 -14.219264221191407Q479.3660000000002 -13.236394653320314 479.47378149414084 -12.666033447265626Q479.60145373535175 -13.236394653320314 479.8962352294924 -14.219264221191407Q480.191016723633 -15.2021337890625 480.61890747070333 -16.211259765625L484.39269787597675 -24.82H488.8078149414065L481.5267224121096 -9.023420288085939V0.0H477.27327758789085Z"/></svg></div>
+    <h1>Команда на ивент <span class="amp">за 2 минуты</span></h1>
+    <p>Укажите мероприятие – подскажем состав команды, посчитаем смету и передадим заявку менеджеру.</p>
   </div>
-  <div class="steps3"><div><b>01</b><span>Выберите услуги</span></div><div><b>02</b><span>Люди и часы</span></div><div><b>03</b><span>Смета и заявка</span></div></div>
-  <span class="lbl mono">Быстрый старт</span>
-  <div class="quick" id="presets"></div>
-  <span class="lbl mono">Популярное</span>
-  <div id="popular"></div>
-</section>
-
-<!-- ========== 2. КАТАЛОГ ========== -->
-<section class="screen" id="catalog">
-  <div class="bar"><button class="back" data-go="home">‹</button><button class="cartbtn" data-go="cart">Смета <i class="cnt">0</i></button></div>
-  <h1>Каталог <span class="amp">услуг</span></h1>
-  <div class="tabs" id="tabs"></div>
-  <div id="list"></div>
-  <p class="note">Ставка – за 1 час работы одного специалиста. Бриф, дресс-код и замена при неявке уже включены.</p>
-</section>
-
-<!-- ========== 3. УСЛУГА ========== -->
-<section class="screen" id="item">
-  <div class="bar"><button class="back" data-go="catalog">‹</button><button class="cartbtn" data-go="cart">Смета <i class="cnt">0</i></button></div>
-  <div id="itemBody"></div>
-</section>
-
-<!-- ========== 4. СМЕТА ========== -->
-<section class="screen" id="cart">
-  <div class="bar"><button class="back" data-go="catalog">‹</button><span class="mono" style="color:var(--mute)">Смета № <span id="num">0001</span></span></div>
-  <h1>Ваша <span class="amp">смета</span></h1>
-  <div id="cartBody"></div>
-</section>
-
-<!-- ========== 5. ЗАЯВКА ========== -->
-<section class="screen" id="form">
-  <div class="bar"><button class="back" data-go="cart">‹</button><span class="mono" style="color:var(--mute)">Шаг 3 из 3</span></div>
-  <h1>О вашем <span class="amp">ивенте</span></h1>
-  <p class="sub">Менеджер проверит смету и подберёт кандидатов с фото.</p>
-  <span class="lbl mono">Мероприятие</span>
-  <div class="fld"><label>Формат</label><input value="Конференция" id="f_fmt"></div>
-  <div class="two"><div class="fld"><label>Дата</label><input value="14.12.2026" id="f_date"></div><div class="fld"><label>Время</label><input value="09:00 – 18:00" id="f_time"></div></div>
-  <div class="fld"><label>Площадка</label><input value="Москва, Красный Октябрь" id="f_place"></div>
-  <span class="lbl mono">Дресс-код</span>
-  <div class="dress" id="dress"><button class="on" data-d="Total black"><b>Total black</b><span>всё чёрное</span></button><button data-d="Ваш образ"><b>Ваш образ</b><span>форма или ТЗ</span></button></div>
-  <span class="lbl mono">Контакт</span>
-  <div class="fld"><label>Имя и компания</label><input value="Анна, Event Lab" id="f_name"></div>
-  <div class="fld"><label>Telegram или телефон</label><input value="@anna_eventlab" id="f_contact"></div>
-  <div class="fld"><label>Комментарий</label><textarea rows="2" id="f_comm">Нужна регистрация с 8:00</textarea></div>
-</section>
-
-<!-- ========== 6. ГОТОВО ========== -->
-<section class="screen" id="done">
-  <div class="bar"><img src="mark-light-bg.svg" alt=""><span class="mono" style="color:var(--mute)">Заявка отправлена</span></div>
-  <h1 style="margin-top:20px">Команда <br>почти <span class="amp">в сборе</span></h1>
-  <p class="sub">Смета и детали ушли менеджеру T&amp;R. Мы на связи в течение часа.</p>
-  <div class="ticket"><div class="l"><span>Смета</span><b id="tNum">№ 0001</b><span id="tSum">0 ₽</span></div><div class="r">Team &amp; Resp.</div></div>
-  <div class="next">
-    <div><b>01</b><span><b style="font:800 14px Manrope;color:var(--ink)">Проверим смету</b><br>и уточним детали в Telegram</span></div>
-    <div><b>02</b><span><b style="font:800 14px Manrope;color:var(--ink)">Пришлём анкеты</b><br>кандидатов с фото – за 1 день</span></div>
-    <div><b>03</b><span><b style="font:800 14px Manrope;color:var(--ink)">Закрепим команду</b><br>за вашей датой</span></div>
+  <div class="acts">
+    <button class="act w" data-act="start"><svg class="ui"><use href="#u-calc"/></svg><div><b>Посчитать смету</b><span>персонал, площадка, продакшн</span></div></button>
+    <button class="act s" data-act="orders"><svg class="ui" style="color:var(--wine)"><use href="#u-list"/></svg><div><b>Мои заявки</b><span>статусы и повтор заказа</span></div></button>
   </div>
+  <div class="lbl"><span class="mono">Быстрый старт</span><span class="mono">шаблоны</span></div>
+  <div class="chips" id="quick"></div>
+  <div class="lbl"><span class="mono">Как это работает</span></div>
+  <div class="how"><div><b>01</b><span>Дата и гости</span></div><div><b>02</b><span>Состав команды</span></div><div><b>03</b><span>Смета сразу</span></div><div><b>04</b><span>Заявка менеджеру</span></div></div>
+  <div class="lbl"><span class="mono">Входит в каждую смену</span></div>
+  <div class="trust">
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-check"/></svg><div><b>Бриф</b><span>перед каждой сменой</span></div></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-check"/></svg><div><b>Супервайзер</b><span>от 4 человек</span></div></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-check"/></svg><div><b>Замена</b><span>при неявке</span></div></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-check"/></svg><div><b>Отчёт</b><span>фото и итоги</span></div></div>
+  </div>
+  <div class="lbl"><span class="mono">Есть вопрос?</span></div>
+  <div class="card mgr"><div class="ava">T&amp;R</div><div style="flex:1"><div class="h3">Менеджер T&amp;R</div><span class="muted" style="font-size:13px">ответим в течение часа</span></div><button class="btn s" data-act="write"><svg class="ui"><use href="#u-chat"/></svg>Написать</button></div>
 </section>
 
-<div class="main" id="main"><button id="mainBtn"><span id="mainL">Открыть каталог</span><span id="mainR"></span></button></div>
+<!-- ======================= ШАГ 1. МЕРОПРИЯТИЕ ======================= -->
+<section class="screen flow" id="s-event">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 1 из 4</span><h2>Мероприятие</h2></div></div>
+  <div class="steps" data-steps></div>
+  <span class="mono muted" style="display:block;margin-bottom:10px">Формат</span>
+  <div class="fmt" id="fmt"></div>
+  <div class="lbl"><span class="mono">Сколько гостей</span><span class="mono" id="gHint"></span></div>
+  <div class="card">
+    <div class="row"><div class="guests"><b id="gVal">150</b><span>гостей</span></div>
+      <div class="stepper"><button data-g="-50" aria-label="Меньше гостей"><svg class="ui"><use href="#u-minus"/></svg></button><button class="pl" data-g="50" aria-label="Больше гостей"><svg class="ui"><use href="#u-plus"/></svg></button></div></div>
+    <input class="range" type="range" aria-label="Количество гостей" min="20" max="2000" step="10" id="gRange">
+  </div>
+  <div class="lbl"><span class="mono">Когда</span></div>
+  <div class="chips" id="qdates" style="margin-bottom:8px"></div>
+  <div class="grid2">
+    <label class="field" id="fDate"><span class="k">Дата</span><input type="date" id="evDate"></label>
+    <label class="field" id="fTime"><span class="k">Начало</span><input type="time" id="evTime" step="900"></label>
+  </div>
+  <div class="errtxt" id="dateErr">Укажите дату и время начала</div>
+  <div class="until" id="until"></div>
+  <div class="card row" style="margin-top:8px"><div><div class="h3">Длительность</div><span class="muted" style="font-size:12.5px">часов на площадке, без монтажа</span></div>
+    <div class="stepper"><button data-d="-1" aria-label="Меньше часов"><svg class="ui"><use href="#u-minus"/></svg></button><output id="dVal">8</output><button class="pl" data-d="1" aria-label="Больше часов"><svg class="ui"><use href="#u-plus"/></svg></button></div></div>
+</section>
+
+<!-- ======================= ШАГ 2. КОМАНДА ======================= -->
+<section class="screen flow" id="s-team">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 2 из 4</span><h2>Команда</h2></div></div>
+  <div class="steps" data-steps></div>
+  <div id="recBox"></div>
+  <div class="lbl"><span class="mono">Ваш состав</span><span class="mono" id="teamCount"></span></div>
+  <div class="team" id="teamList"></div>
+  <button class="add" data-act="catalog"><svg class="ui"><use href="#u-plus"/></svg>Добавить услугу</button>
+  <p class="muted" style="font-size:12px;margin-top:10px">Нажмите на услугу, чтобы изменить людей, часы или добавить вторую смену – например, монтаж.</p>
+</section>
+
+<!-- ======================= ШАГ 3. СМЕТА ======================= -->
+<section class="screen flow" id="s-estimate">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 3 из 4</span><h2>Смета</h2></div><button class="iconbtn" data-act="copy" aria-label="Скопировать смету"><svg class="ui"><use href="#u-copy"/></svg></button></div>
+  <div class="steps" data-steps></div>
+  <div class="card" style="display:flex;gap:10px;align-items:center" id="evSum"></div>
+  <div class="est" id="est"></div>
+  <div id="estNotes"></div>
+  <div class="tot" id="tot"></div>
+  <p class="muted" style="font-size:12px;margin-top:10px">Предварительный расчёт без НДС. Итог менеджер фиксирует в договоре. Договорные позиции считаем отдельно после заявки.</p>
+</section>
+
+<!-- ======================= ШАГ 4. КОНТАКТЫ ======================= -->
+<section class="screen flow" id="s-contacts">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 4 из 4</span><h2>Контакты</h2></div></div>
+  <div class="steps" data-steps></div>
+  <span class="mono muted" style="display:block;margin-bottom:10px">Площадка</span>
+  <label class="field" id="fPlace"><span class="k">Адрес или название</span><input id="cPlace" placeholder="Москва, Красный Октябрь" enterkeyhint="next"></label>
+  <div class="errtxt">Укажите площадку – хотя бы город</div>
+  <div class="lbl"><span class="mono">Дресс-код команды</span></div>
+  <div class="dress" id="dress">
+    <button data-dress="Total black" class="on"><span class="sw-dot" style="background:var(--ink);border-color:var(--ink)"></span><b>Total black</b><span>всё чёрное</span></button>
+    <button data-dress="Ваш образ"><span class="sw-dot" style="background:linear-gradient(135deg,var(--wine) 50%,var(--stone) 50%)"></span><b>Ваш образ</b><span>форма, мерч или ТЗ</span></button>
+  </div>
+  <div class="lbl"><span class="mono">Как с вами связаться</span></div>
+  <label class="field" id="fName" style="margin-bottom:6px"><span class="k">Имя</span><input id="cName" autocomplete="name" enterkeyhint="next"></label>
+  <div class="errtxt">Как к вам обращаться?</div>
+  <label class="field" style="margin-bottom:6px"><span class="k">Компания</span><input id="cCompany" placeholder="необязательно"></label>
+  <label class="field" id="fContact" style="margin-bottom:6px"><span class="k">Telegram или телефон</span><input id="cContact" autocomplete="tel" autocapitalize="none" autocorrect="off" enterkeyhint="next"></label>
+  <div class="errtxt">Нужен контакт, чтобы менеджер вам написал</div>
+  <div class="seg" id="pref" style="margin-top:4px"><button class="on" data-pref="Telegram">Написать в Telegram</button><button data-pref="Звонок">Позвонить</button></div>
+  <label class="field" style="margin-top:8px"><span class="k">Комментарий</span><textarea id="cComment" rows="2" placeholder="например: регистрация с 8:00"></textarea></label>
+</section>
+
+<!-- ======================= ГОТОВО ======================= -->
+<section class="screen flow" id="s-done">
+  <div class="top"><div class="t"><svg style="height:22px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 453" fill="none"><path transform="translate(73.70 369.08)" fill="#0E0E10" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#8A2B25" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/></svg></div><span class="mono muted">Заявка отправлена</span></div>
+  <h1 style="margin-top:10px">Команда почти <span class="amp">в сборе</span></h1>
+  <p class="sub" id="doneSub">Менеджер T&amp;R проверит смету и напишет вам в течение часа.</p>
+  <div class="ticket"><div class="l"><span>Смета</span><b id="tNum">№ 0000</b><span id="tSum">0 ₽</span></div><div class="r">Team &amp; Resp.</div></div>
+  <div class="tl" id="tl"></div>
+  <div class="grid2" style="margin-top:4px"><button class="btn s" data-act="orders">Мои заявки</button><button class="btn s" data-act="mgrdemo">Как видит менеджер</button></div>
+</section>
+
+<!-- ======================= МОИ ЗАЯВКИ ======================= -->
+<section class="screen" id="s-orders">
+  <div class="top"><div class="t"><span class="mono muted">История</span><h2>Мои заявки</h2></div></div>
+  <div id="ordList"></div>
+</section>
+
+<!-- ======================= ЗАЯВКА: ДЕТАЛИ ======================= -->
+<section class="screen flow" id="s-order">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted" id="oDate"></span><h2 id="oTitle">Заявка</h2></div></div>
+  <div id="oBody"></div>
+</section>
+
+
+
+
+
+<!-- ======================= ДЕМО: У МЕНЕДЖЕРА ======================= -->
+<section class="screen flow" id="s-mgr">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Демо</span><h2>Заявка у менеджера</h2></div></div>
+  <p class="sub" style="margin-top:0">Так заявка приходит в тему «Бот» рабочей группы. Кнопки меняют статус – клиент видит его в «Моих заявках».</p>
+  <div class="tgchat"><div class="tgmsg" id="mgrMsg"></div><div class="tgbtns" id="mgrBtns"></div></div>
+</section>
+
+<!-- ======================= ШТОРКИ ======================= -->
+<div class="veil" id="veil" data-act="close"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab" id="grab"><div class="grip"></div><div class="sh" id="shHead"></div></div><div class="sb" id="shBody"></div><div class="sf" id="shFoot"></div></div>
+
+<div class="dock" id="dock">
+  <div class="main" id="main"><button id="mainBtn"><span id="mainL"></span><span id="mainR"></span></button></div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="home"><svg class="ui"><use href="#u-home"/></svg>Главная</button>
+    <button data-tab="calc"><svg class="ui"><use href="#u-calc"/></svg>Смета<span class="badge" id="tabBadge" style="display:none"></span></button>
+    <button data-tab="orders"><svg class="ui"><use href="#u-list"/></svg>Заявки</button>
+  </nav>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ---------- Данные ----------
-// price – ₽ за 1 час одного специалиста, null – договорная цена
+/* ============================================================
+   T&R – мини-приложение «Смета» для заказчиков. Версия 3.1 (без анкеты исполнителя – она в отдельном боте).
+   Все цены, правила и тексты – в блоке CONFIG и SVC ниже.
+   ============================================================ */
+const CONFIG = {
+  API_URL: "https://ЛОГИН.pythonanywhere.com", // сервер бота (PythonAnywhere)
+  URGENT_HOURS: 12,      // меньше стольких часов до начала – срочный заказ
+  URGENT_RATE: 0.30,     // наценка за срочность
+  SV_FROM: 4,            // супервайзер обязателен от стольких человек персонала
+  SV_PER: 15,            // ещё один супервайзер на каждые N человек
+  MIN_HOURS: null,       // минимальная смена, ч (null – не согласовано, ограничения нет)
+  NIGHT: null,           // ночная наценка: {from:23, to:7, rate:0.2} (null – нет)
+  MANAGER: "tr_events",  // Telegram менеджера для кнопки «Написать»
+};
+
+// price – ₽ за 1 час одного специалиста; null – договорная цена
 const SVC = [
-  {id:"01", g:"Персонал", name:"Хелперы", short:"зоны, гардероб, материалы", price:700, inc:["Подготовка зон","Гардероб","Раздача материалов","Помощь организатору"], staff:true},
-  {id:"02", g:"Персонал", name:"Промо", short:"сэмплинг, активации, стенд", price:700, inc:["Сэмплинг","Активации","Работа на стенде","Фотоотчёт"], staff:true},
-  {id:"03", g:"Персонал", name:"Промо-модели", short:"выставки, VIP-зоны", price:1000, inc:["Выставки","Презентации","VIP-зоны","Подбор по типажу"], staff:true},
-  {id:"04", g:"Персонал", name:"Супервайзер", short:"старший на площадке", price:800, inc:["Бриф","Тайминг","Замены","Отчёт"]},
-  {id:"05", g:"Площадка", name:"Хелперы-грузчики", short:"погрузка, монтаж", price:750, inc:["Погрузка","Монтаж и демонтаж","Расстановка","Ночные смены"], staff:true},
-  {id:"06", g:"Площадка", name:"Операторы аккредитации", short:"регистрация, QR, бейджи", price:700, inc:["Списки и QR","Печать бейджей","Контроль доступа","Отчёт по явке"], staff:true},
-  {id:"07", g:"Площадка", name:"Водитель на легковом авто", short:"хэтчбек: команда, мерч", price:null, inc:["Трансфер команды","Мерч и материалы","Ранние выезды"]},
+  {id:"01", g:"Персонал", name:"Хелперы", short:"зоны, гардероб, материалы", price:700, staff:true, inc:["Подготовка зон","Гардероб","Раздача материалов","Помощь организатору"]},
+  {id:"02", g:"Персонал", name:"Промо", short:"сэмплинг, активации, стенд", price:700, staff:true, inc:["Сэмплинг","Активации","Работа на стенде","Фотоотчёт и цифры"]},
+  {id:"03", g:"Персонал", name:"Промо-модели", short:"выставки, презентации, VIP", price:1000, staff:true, inc:["Стенды и выставки","Презентации","VIP-зоны","Подбор по типажу"]},
+  {id:"04", g:"Персонал", name:"Супервайзер", short:"старший на площадке", price:800, inc:["Бриф и расстановка","Тайминг","Замены","Отчёт после смены"]},
+  {id:"05", g:"Площадка", name:"Хелперы-грузчики", short:"погрузка, монтаж, расстановка", price:750, staff:true, inc:["Погрузка","Монтаж и демонтаж","Расстановка мебели","Ночные смены"]},
+  {id:"06", g:"Площадка", name:"Операторы аккредитации", short:"регистрация, QR, бейджи", price:700, staff:true, inc:["Списки и QR-коды","Печать бейджей","Контроль доступа","Отчёт по явке"]},
+  {id:"07", g:"Площадка", name:"Водитель на легковом авто", short:"хэтчбек: команда, мерч, реквизит", price:null, inc:["Трансфер команды","Мерч и материалы","Ранние выезды"]},
   {id:"08", g:"Продакшн", name:"Свет и съёмка", short:"свет, фото, видео", price:null, opt:true, inc:["Свет","Фото и видео","Своя техника"]},
   {id:"09", g:"Продакшн", name:"Монтажёр, рилс-мейкер", short:"рилсы день в день", price:null, opt:true, inc:["Рилсы","After-movie","Сторис"]},
-  {id:"10", g:"Продакшн", name:"Ивент-задачи", short:"площадка, смета, сценарий", price:null, inc:["Площадка","Смета","Концепция","Сценарий"]},
+  {id:"10", g:"Продакшн", name:"Ивент-задачи", short:"площадка, смета, сценарий", price:null, inc:["Подбор площадки","Смета","Концепция","Сценарий"]},
 ];
-const PRESETS = {
-  "Конференция": {"06":[3,6],"01":[6,8]},
-  "Корпоратив": {"01":[4,6],"05":[3,4]},
-  "Промо-акция": {"02":[4,6],"03":[2,6]},
-  "Выставка": {"03":[2,8],"02":[3,8],"05":[2,4]},
+
+// Форматы и подсказка состава по числу гостей (ориентир, клиент меняет)
+const FORMATS = {
+  "Конференция": {icon:"06", rec:(g,d)=>[["06",Math.max(1,Math.ceil(g/120)),Math.min(d,6),"1 оператор на ~120 гостей, пик – первые часы"],["01",Math.max(2,Math.ceil(g/60)),d,"зоны, гардероб и материалы: 1 на ~60 гостей"],["05",2,4,"монтаж и демонтаж, 4 часа"]]},
+  "Корпоратив": {icon:"01", rec:(g,d)=>[["01",Math.max(2,Math.ceil(g/50)),d,"гардероб и помощь в зале: 1 на ~50 гостей"],...(g>=80?[["06",Math.ceil(g/150),3,"регистрация по спискам на входе"]]:[]),["05",2,4,"декор и сцена: монтаж, 4 часа"]]},
+  "Промо-акция": {icon:"02", rec:(g,d)=>[["02",Math.max(2,Math.ceil(g/150)),d,"промоутеры: 1 на ~150 контактов за смену"],["03",1,d,"промо-модель – лицо бренда на точке"]]},
+  "Выставка": {icon:"03", rec:(g,d)=>[["03",2,d,"промо-модели на стенд"],["02",Math.max(1,Math.ceil(g/300)),d,"промоутеры: сбор контактов"],["05",3,5,"застройка стенда, 5 часов"]]},
+  "Форум": {icon:"10", rec:(g,d)=>[["06",Math.max(2,Math.ceil(g/120)),Math.min(d,6),"регистрация и зоны доступа"],["01",Math.max(3,Math.ceil(g/50)),d,"навигация по зонам, материалы, гардероб"],["05",3,5,"монтаж и демонтаж"]]},
+  "Другое": {icon:"04", rec:(g,d)=>[["01",Math.max(2,Math.ceil(g/50)),d,"базовый состав, поменяйте под задачу"]]},
 };
-// Адрес сервера бота на PythonAnywhere (без слэша в конце)
-const API_URL = "https://ЛОГИН.pythonanywhere.com";
-const URGENT = 0.30;          // менее 12 ч до начала
-const SV_FROM = 4;            // супервайзер от 4 человек персонала
 
-// ---------- Состояние ----------
-let cart = {};                // id -> {p: людей, h: часов}
-let urgent = false, svOff = false, cur = "01", tab = "Все", dress = "Total black";
-const $ = s => document.querySelector(s);
-const rub = n => n.toLocaleString("ru-RU").replace(/ /g," ") + " ₽";
-const ico = id => `<svg class="ico" viewBox="0 0 48 48"><use href="#i${id}"/></svg>`;
-const byId = id => SVC.find(s => s.id === id);
-const tg = window.Telegram && Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor("#F3EFE6"); }
-const haptic = () => tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred("light");
-function toast(t){ const e=$("#toast"); e.textContent=t; e.style.display="block"; clearTimeout(e._t); e._t=setTimeout(()=>e.style.display="none",1600); }
+/* ---------- состояние ---------- */
+const S = {
+  screen:"home", ev:{fmt:"Конференция", guests:300, date:"", time:"09:00", dur:8},
+  team:{},            // id -> {shifts:[{p,h,label}], ask:false}
+  svOff:false, dress:"Total black", pref:"Telegram", recApplied:false,
+  orders:[],
+};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const rub=n=>Math.round(n).toLocaleString("ru-RU").replace(/ /g," ")+" ₽";
+const ico=id=>`<svg class="ico" viewBox="0 0 48 48"><use href="#i${id}"/></svg>`;
+const ui=n=>`<svg class="ui"><use href="#u-${n}"/></svg>`;
+const byId=id=>SVC.find(s=>s.id===id);
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return m==1&&h!=11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c};
+const tg=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData!==undefined?Telegram.WebApp:null;
+const inTG=!!(tg&&tg.initData);
+if(tg){ try{ tg.ready(); tg.expand(); tg.setHeaderColor("#F3EFE6"); tg.setBackgroundColor("#F3EFE6"); tg.enableClosingConfirmation&&tg.enableClosingConfirmation(); }catch(e){} }
+const haptic=(t="light")=>{ try{ tg&&tg.HapticFeedback&&(t==="ok"?tg.HapticFeedback.notificationOccurred("success"):t==="err"?tg.HapticFeedback.notificationOccurred("error"):tg.HapticFeedback.impactOccurred(t)); }catch(e){} };
+function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.add("on"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("on"),1800); }
+const store={ get(k){ try{return JSON.parse(localStorage.getItem("tr_"+k))}catch(e){return null} }, set(k,v){ try{localStorage.setItem("tr_"+k,JSON.stringify(v))}catch(e){} } };
 
-// ---------- Расчёт ----------
-function staffCount(){ return Object.entries(cart).filter(([id])=>byId(id).staff).reduce((a,[,v])=>a+v.p,0); }
-function maxHours(){ return Math.max(0,...Object.values(cart).map(v=>v.h)); }
+/* ---------- расчёт ---------- */
+function startAt(){ if(!S.ev.date||!S.ev.time) return null; const d=new Date(S.ev.date+"T"+S.ev.time); return isNaN(d)?null:d; }
+function hoursUntil(){ const d=startAt(); return d?(d-Date.now())/36e5:null; }
+function isUrgent(){ const h=hoursUntil(); return h!==null&&h>=0&&h<CONFIG.URGENT_HOURS; }
+function staffCount(){ return Object.entries(S.team).filter(([id])=>byId(id).staff).reduce((a,[,v])=>a+Math.max(0,...v.shifts.map(s=>s.p)),0); }
+function maxHours(){ let m=0; Object.values(S.team).forEach(v=>v.shifts.forEach(s=>m=Math.max(m,s.h))); return m||S.ev.dur; }
+function svCount(){ return Math.max(1,Math.ceil(staffCount()/CONFIG.SV_PER)); }
+function needSv(){ return staffCount()>=CONFIG.SV_FROM && !S.team["04"]; }
 function calc(){
-  const lines = Object.entries(cart).map(([id,v]) => { const s=byId(id); return {s, p:v.p, h:v.h, sum: s.price ? s.price*v.p*v.h : null}; });
-  const needSv = staffCount() >= SV_FROM && !cart["04"];
-  if (needSv && !svOff) lines.push({s:byId("04"), p:1, h:maxHours()+1, sum:800*(maxHours()+1), auto:true});
-  const base = lines.reduce((a,l)=>a+(l.sum||0),0);
-  const extra = urgent ? Math.round(base*URGENT) : 0;
-  return {lines, base, extra, total: base+extra, needSv, dog: lines.some(l=>l.sum===null)};
+  const lines=[];
+  Object.entries(S.team).forEach(([id,v])=>{ const s=byId(id); v.shifts.forEach((sh,i)=>lines.push({id,s,p:sh.p,h:sh.h,label:sh.label||(v.shifts.length>1?`смена ${i+1}`:""),sum:s.price?s.price*sh.p*sh.h:null,ask:v.ask})); });
+  const auto=needSv()&&!S.svOff;
+  if(auto) lines.push({id:"04",s:byId("04"),p:svCount(),h:maxHours()+1,label:"авто",sum:800*svCount()*(maxHours()+1),auto:true});
+  const base=lines.reduce((a,l)=>a+(l.sum||0),0), urg=isUrgent()?base*CONFIG.URGENT_RATE:0;
+  const people=lines.filter(l=>l.s.staff||l.id==="04").reduce((a,l)=>a+l.p,0);
+  return {lines,base,urg,total:base+urg,dog:lines.filter(l=>l.sum===null),auto,people};
+}
+function teamSize(){ return Object.keys(S.team).length; }
+
+/* ---------- навигация ---------- */
+const FLOW=["event","team","estimate","contacts"];
+const BACK={event:"home",team:"event",estimate:"team",contacts:"estimate",order:"orders",mgr:"done"};
+function go(s,opt={}){
+  const prev=S.screen; S.screen=s; closeSheet(true);
+  const fi=FLOW.indexOf(s), pi=FLOW.indexOf(prev);
+  const dir=opt.dir||(opt.back?"back":(fi>=0&&pi>=0?(fi<pi?"back":""):(BACK[prev]===s?"back":"")));
+  $$(".screen").forEach(e=>{ const on=e.id==="s-"+s; e.classList.remove("on","back","fade"); if(on){ void e.offsetWidth; e.classList.add("on"); if(dir) e.classList.add(dir); } });
+  const R={home:rHome,event:rEvent,team:rTeam,estimate:rEstimate,contacts:rContacts,done:rDone,orders:rOrders,order:rOrder,mgr:rMgr}; (R[s]||(()=>{}))(opt);
+  rSteps(); rDock(); window.scrollTo(0,0);
+  if(tg&&tg.BackButton){ try{ BACK[s]?tg.BackButton.show():tg.BackButton.hide(); }catch(e){} }
+}
+function back(){ haptic(); if($("#sheet").classList.contains("on")) return closeSheet(); if(BACK[S.screen]) go(BACK[S.screen],{back:true}); }
+if(tg&&tg.BackButton){ try{ tg.BackButton.onClick(back); }catch(e){} }
+function rSteps(){
+  const i=FLOW.indexOf(S.screen); const names=["Ивент","Команда","Смета","Контакты"];
+  $$("[data-steps]").forEach(el=>el.innerHTML=names.map((n,k)=>`<button data-step="${k}" class="${k<i?"done":k===i?"cur":""}"><i></i><span>${n}</span></button>`).join(""));
+}
+function rDock(){
+  const s=S.screen, c=calc(), tabMap={home:"home",orders:"orders"};
+  const showTabs=!!tabMap[s];
+  $("#tabs").classList.toggle("hide",!showTabs);
+  $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tabMap[s]));
+  const n=teamSize(); const bd=$("#tabBadge"); bd.style.display=n?"":"none"; bd.textContent=n;
+  const m=$("#main"), b=$("#mainBtn"); m.classList.remove("hide"); b.className="";
+  const set=(l,r="",cls="")=>{ $("#mainL").textContent=l; $("#mainR").textContent=r; b.className=cls; };
+  if(s==="home"){ if(n) set("Продолжить смету",rub(c.total)); else m.classList.add("hide"); }
+  else if(s==="event") set("Подобрать команду","→");
+  else if(s==="team") n?set("Смотреть смету",rub(c.total)):set("Добавьте услуги","","off");
+  else if(s==="estimate") set("Оформить заявку",rub(c.total));
+  else if(s==="contacts") set("Отправить заявку",rub(c.total));
+  else if(s==="done") set("Новая смета","","k");
+  else if(s==="orders") S.orders.length?m.classList.add("hide"):set("Посчитать смету");
+  else if(s==="order") set("Повторить заказ","","k");
+  else m.classList.add("hide");
+}
+let lastTotal=null;
+function bumpTotal(){ const c=calc().total; if(lastTotal!==null&&c!==lastTotal){ ["#mainR","#tot .big b"].forEach(q=>{ const e=$(q); if(e){ e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump"); } }); } lastTotal=c; }
+function mainAction(){
+  haptic("medium"); const s=S.screen;
+  if(s==="home") go(teamSize()?"estimate":"event");
+  else if(s==="event"){ if(!validEvent()) return; if(!teamSize()&&!S.recApplied) applyRec(true); go("team"); }
+  else if(s==="team"){ if(!teamSize()) return toast("Добавьте хотя бы одну услугу"); go("estimate"); }
+  else if(s==="estimate") go("contacts");
+  else if(s==="contacts"){ if(!S.sending) send(); }
+  else if(s==="done"){ S.team={}; S.recApplied=false; S.svOff=false; go("event"); }
+  else if(s==="orders") go("event");
+  else if(s==="order") repeat(S._order);
+}
+$("#mainBtn").onclick=mainAction;
+
+/* ---------- ГЛАВНАЯ ---------- */
+function rHome(){
+  $("#quick").innerHTML=Object.entries(FORMATS).filter(([k])=>k!=="Другое").map(([k,f])=>`<button class="chip" data-quick="${k}">${ico(f.icon)}${k}</button>`).join("");
 }
 
-// ---------- Отрисовка ----------
-function renderHome(){
-  $("#presets").innerHTML = Object.keys(PRESETS).map(k=>`<button class="chip" data-preset="${k}">${k}</button>`).join("");
-  $("#popular").innerHTML = ["01","06","03"].map(svcRow).join("");
+/* ---------- ШАГ 1 ---------- */
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function quickDates(){ const t=new Date(); const add=n=>{ const d=new Date(t); d.setDate(d.getDate()+n); return d; };
+  const sat=add((6-t.getDay()+7)%7||7);
+  return [["Сегодня",add(0)],["Завтра",add(1)],["Суббота, "+sat.getDate(),sat],["Через неделю",add(7)]].map(([l,d])=>[l,ymd(d)]); }
+function tickEl(q){ const e=$(q); if(!e) return; e.classList.remove("tick"); void e.offsetWidth; e.classList.add("tick"); }
+function rEvent(){
+  $("#fmt").innerHTML=Object.entries(FORMATS).map(([k,f])=>`<button data-fmt="${k}" class="${S.ev.fmt===k?"on":""}">${ico(f.icon)}${k}</button>`).join("");
+  $("#gVal").textContent=S.ev.guests; $("#gRange").value=S.ev.guests;
+  $("#evDate").value=S.ev.date; $("#evTime").value=S.ev.time; $("#dVal").textContent=S.ev.dur;
+  $("#evDate").min=ymd(new Date());
+  $("#qdates").innerHTML=quickDates().map(([l,v])=>`<button class="chip ${S.ev.date===v?"on":""}" data-qdate="${v}">${l}</button>`).join("");
+  rUntil();
 }
-function svcRow(id){
-  const s=byId(id), inC=!!cart[id];
-  return `<div class="svc ${inC?"in":""}" data-open="${id}"><div class="ib">${ico(id)}</div>
-    <div><span class="n">${id}</span><b>${s.name}${s.opt?'<span class="opt">опция</span>':""}</b><small>${s.short}</small></div>
-    <div><div class="p">${s.price?rub(s.price):"Договорная"}<span>${s.price?"за час":"под задачу"}</span></div><div class="add" data-add="${id}">${inC?"✓":"+"}</div></div></div>`;
+function rUntil(){
+  const h=hoursUntil(), el=$("#until");
+  if(h===null){ el.innerHTML=`<span class="muted">Срочность и ночные часы посчитаем автоматически по дате и времени.</span>`; return; }
+  if(h<0){ el.innerHTML=`<span class="tag o">${ui("info")} дата в прошлом</span>`; return; }
+  const d=Math.floor(h/24), hh=Math.round(h%24);
+  const txt=d?`${d} ${plural(d,"день","дня","дней")} ${hh} ч`:`${Math.max(1,Math.round(h))} ч`;
+  el.innerHTML=isUrgent()?`<span class="tag w">${ui("bolt")} срочно</span><span>до начала ${txt} – ставка +30%</span>`:`<span class="tag g">${ui("check")} успеваем</span><span class="muted">до начала ${txt}</span>`;
 }
-function renderCatalog(){
-  const groups=["Все","Персонал","Площадка","Продакшн"];
-  $("#tabs").innerHTML = groups.map(g=>`<button class="chip ${g===tab?"on":""}" data-tab="${g}">${g}</button>`).join("");
-  $("#list").innerHTML = SVC.filter(s=>tab==="Все"||s.g===tab).map(s=>svcRow(s.id)).join("");
+function validEvent(){
+  const ok=!!startAt(); $("#fDate").classList.toggle("err",!S.ev.date); $("#fTime").classList.toggle("err",!S.ev.time);
+  $("#dateErr").style.display=ok?"none":"block"; if(!ok){ haptic("err"); toast("Укажите дату и время начала"); } return ok;
 }
-function renderItem(){
-  const s=byId(cur), v=cart[cur]||{p:1,h:s.id==="04"?9:8};
-  $("#itemBody").innerHTML = `
-    <div class="ihead"><div class="ib">${ico(s.id)}</div><div><span class="mono" style="color:var(--wine)">${s.id} · ${s.g}</span><h2 style="margin-top:4px">${s.name}</h2></div></div>
-    ${s.opt?'<p class="note" style="color:var(--wine)">Опция – подключаем по вашему запросу, за доп. плату.</p>':""}
-    <ul class="incl">${s.inc.map(x=>`<li>${x}</li>`).join("")}</ul>
-    <span class="lbl mono">Сколько нужно</span>
-    <div class="stp"><div><b>Человек</b><small>в смене</small></div><div class="ctl"><button data-st="p,-1">–</button><span id="vp">${v.p}</span><button class="pl" data-st="p,1">+</button></div></div>
-    <div class="stp"><div><b>Часов</b><small>на человека</small></div><div class="ctl"><button data-st="h,-1">–</button><span id="vh">${v.h}</span><button class="pl" data-st="h,1">+</button></div></div>
-    <div class="sum"><span>${s.price?`${rub(s.price)} × ${v.p} чел × ${v.h} ч`:"Стоимость"}</span><b>${s.price?rub(s.price*v.p*v.h):"Договорная"}</b></div>
-    <p class="note">${s.price?"Срочный заказ (менее 12 ч до начала) считается в смете отдельно.":"Менеджер посчитает стоимость после заявки – добавьте позицию в смету."}</p>`;
-  window._draft = {...v};
-}
-function renderCart(){
-  const c=calc();
-  if(!c.lines.length){ $("#cartBody").innerHTML=`<div class="empty"><div style="font:italic 400 90px/1 'Instrument Serif';color:var(--wine)">&amp;</div>Смета пока пустая.<br>Добавьте услуги из каталога.</div>`; return; }
-  $("#cartBody").innerHTML = `
-    <div style="margin-top:10px">${c.lines.map(l=>`<div class="row">${ico(l.s.id)}<div><b>${l.s.name}${l.auto?' <span class="opt">авто</span>':""}</b><small>${l.p} чел × ${l.h} ч${l.s.price?` × ${l.s.price} ₽`:""}</small></div><div class="s">${l.sum!==null?rub(l.sum):"договорная"}${l.auto?"":`<em data-edit="${l.s.id}">изменить</em>`}</div></div>`).join("")}</div>
-    ${c.needSv?`<div class="auto"><i>✦</i><div>В команде ${staffCount()} чел. – от ${SV_FROM} мы ставим супервайзера: он ведёт смену и отвечает за результат.<div class="sw" style="margin-top:8px;background:#fff"><div><b>Без супервайзера</b><small>только по вашей просьбе</small></div><div class="tg ${svOff?"on":""}" data-tg="sv"></div></div></div></div>`:""}
-    <div class="sw"><div><b>Срочный заказ</b><small>до начала меньше 12 часов</small></div><div class="tg ${urgent?"on":""}" data-tg="urgent"></div></div>
-    <div class="total">
-      <div class="l"><span>Персонал</span><span>${rub(c.base)}</span></div>
-      ${urgent?`<div class="l"><span>Срочность +30%</span><span>${rub(c.extra)}</span></div>`:""}
-      ${c.dog?`<div class="l"><span>Договорные позиции</span><span>после заявки</span></div>`:""}
-      <div class="big"><span>Итого</span><b>${rub(c.total)}</b></div>
-    </div>
-    <p class="note">Предварительный расчёт без НДС. Итог фиксируем в договоре после проверки менеджером.</p>`;
-}
-function count(){ const n=Object.keys(cart).length; document.querySelectorAll(".cnt").forEach(e=>e.textContent=n); }
 
-// ---------- Навигация и кнопка ----------
-let screen="home";
-function go(s){
-  screen=s; document.querySelectorAll(".screen").forEach(e=>e.classList.toggle("on",e.id===s));
-  ({home:renderHome,catalog:renderCatalog,item:renderItem,cart:renderCart}[s]||(()=>{}))();
-  count(); mainBtn(); window.scrollTo(0,0);
-  if (tg && tg.BackButton) s==="home"||s==="done" ? tg.BackButton.hide() : tg.BackButton.show();
+/* ---------- ШАГ 2 ---------- */
+function recList(){ return FORMATS[S.ev.fmt].rec(S.ev.guests,S.ev.dur); }
+function applyRec(silent){
+  S.team={}; recList().forEach(([id,p,h])=>{ if(S.team[id]) S.team[id].shifts.push({p,h}); else S.team[id]={shifts:[{p,h}]}; });
+  S.recApplied=true; if(!silent){ haptic("ok"); toast("Состав применён – можно менять"); }
 }
-function mainBtn(){
-  const c=calc(), m=$("#main"), b=$("#mainBtn"); m.classList.remove("hide"); b.classList.remove("dark");
-  const set=(l,r)=>{ $("#mainL").textContent=l; $("#mainR").textContent=r||""; };
-  if(screen==="home") set("Открыть каталог", Object.keys(cart).length?`в смете ${Object.keys(cart).length}`:"");
-  else if(screen==="catalog") Object.keys(cart).length ? set("Смета", rub(c.total)) : set("Выберите услуги","");
-  else if(screen==="item") set(cart[cur]?"Сохранить":"Добавить в смету", byId(cur).price?rub(byId(cur).price*_draft.p*_draft.h):"");
-  else if(screen==="cart") Object.keys(cart).length ? set("Оформить заявку", rub(c.total)) : set("В каталог","");
-  else if(screen==="form") { set("Отправить заявку", rub(c.total)); }
-  else if(screen==="done") { b.classList.add("dark"); set("Новая смета",""); }
+function rTeam(){
+  const rec=recList(); let p=0;
+  const lines=rec.map(([id,n,h,why])=>{ p+=n; return `<li><span>${byId(id).name} · ${n} чел</span><em>${h} ч</em></li>`; }).join("");
+  const svn=Math.max(1,Math.ceil(p/CONFIG.SV_PER)), sv=p>=CONFIG.SV_FROM?`<li><span>Супервайзер · ${svn} чел</span><em>авто</em></li>`:"";
+  $("#recBox").innerHTML=`<div class="rec"><div class="big">&amp;</div>
+    <span class="mono" style="color:#9C978D;position:relative">${ui("spark")} Рекомендуем · ${S.ev.fmt.toLowerCase()}, ${S.ev.guests} гостей</span>
+    <ul>${lines}${sv}</ul>
+    <details class="why"><summary style="cursor:pointer;color:var(--paper);font-weight:700">Почему столько?</summary><div style="margin-top:6px">${rec.map(r=>`• ${byId(r[0]).name}: ${r[3]}`).join("<br>")}${sv?`<br>• Супервайзер: от ${CONFIG.SV_FROM} человек ставим старшего, на каждые ${CONFIG.SV_PER} – ещё одного.`:""}</div></details>
+    <div class="btns">${S.recApplied?`<span class="tag" style="background:#2A2A2E;color:#C9C4BA">${ui("check")} применено</span><button class="btn l" style="color:var(--paper);min-height:36px;padding:0 12px;font-size:13px" data-act="rec">Сбросить к рекомендации</button>`:`<button class="btn w" data-act="rec">Применить состав</button>`}</div></div>`;
+  const ids=Object.keys(S.team);
+  $("#teamCount").textContent=ids.length?`${ids.length} ${plural(ids.length,"услуга","услуги","услуг")}`:"";
+  $("#teamList").innerHTML=ids.length?ids.map(id=>{ const s=byId(id), v=S.team[id];
+    const sum=s.price?v.shifts.reduce((a,x)=>a+s.price*x.p*x.h,0):null;
+    const det=v.shifts.map(x=>`${x.p} чел × ${x.h} ч${x.label?" · "+x.label:""}`).join("<br>");
+    return `<button class="item" data-open="${id}"><div class="ib">${ico(id)}</div><div><b>${s.name}${s.opt?' <span class="tag o">опция</span>':""}</b><small>${det}</small></div><div class="s">${sum!==null?rub(sum):(v.ask?"расчёт":"договорная")}<em>изменить</em></div></button>`;
+  }).join(""):`<div class="empty"><span class="amp">&amp;</span>Пока пусто. Примените рекомендацию или добавьте услуги вручную.</div>`;
 }
-$("#mainBtn").onclick = () => {
-  haptic();
-  if(screen==="home") go("catalog");
-  else if(screen==="catalog") Object.keys(cart).length ? go("cart") : toast("Добавьте хотя бы одну услугу");
-  else if(screen==="item"){ cart[cur]={..._draft}; toast("Добавлено в смету"); go("catalog"); }
-  else if(screen==="cart") Object.keys(cart).length ? go("form") : go("catalog");
-  else if(screen==="form") send();
-  else if(screen==="done"){ cart={}; urgent=false; svOff=false; go("home"); }
-};
+
+/* ---------- ШТОРКИ ---------- */
+function openSheet(head,body,foot){ $("#shHead").innerHTML=head; $("#shBody").innerHTML=body; $("#shFoot").innerHTML=foot||""; $("#shFoot").style.display=foot?"":"none"; $("#veil").classList.add("on"); $("#sheet").classList.add("on"); $("#dock").style.visibility="hidden"; }
+function closeSheet(instant){ const sh=$("#sheet"); if(!sh.classList.contains("on")) return; sh.classList.add("closing"); sh.style.transform=""; $("#veil").classList.remove("on"); sh.classList.remove("on"); $("#dock").style.visibility=""; setTimeout(()=>sh.classList.remove("closing"),instant?0:260); }
+(function swipe(){ const g=$("#grab"), sh=$("#sheet"); let y0=null, dy=0, t0=0;
+  g.addEventListener("pointerdown",e=>{ if(e.target.closest("button")) return; y0=e.clientY; dy=0; t0=Date.now(); sh.classList.add("drag"); g.setPointerCapture(e.pointerId); });
+  g.addEventListener("pointermove",e=>{ if(y0===null) return; dy=Math.max(0,e.clientY-y0); sh.style.transform="translate(-50%,"+dy+"px)"; $("#veil").style.opacity=String(Math.max(0,1-dy/400)); });
+  const end=()=>{ if(y0===null) return; const v=dy/Math.max(1,Date.now()-t0); sh.classList.remove("drag"); $("#veil").style.opacity=""; if(dy>110||v>.6){ haptic(); closeSheet(); } else sh.style.transform=""; y0=null; };
+  g.addEventListener("pointerup",end); g.addEventListener("pointercancel",end); })();
+let catTab="Все";
+function openCatalog(){
+  const tabs=["Все","Персонал","Площадка","Продакшн"];
+  openSheet(`<div style="flex:1"><h2>Каталог услуг</h2><span class="muted" style="font-size:12.5px">ставка – за час одного специалиста</span></div><button class="iconbtn" data-act="close">${ui("x")}</button>`,
+    `<div class="seg" style="margin-bottom:6px">${tabs.map(t=>`<button data-cat="${t}" class="${t===catTab?"on":""}">${t}</button>`).join("")}</div>
+     ${SVC.filter(s=>catTab==="Все"||s.g===catTab).map(s=>`<button class="cat ${S.team[s.id]?"in":""}" data-open="${s.id}"><div class="ib">${ico(s.id)}</div><div><b>${s.name}${s.opt?' <span class="tag o">опция</span>':""}</b><small>${s.short}</small></div><div><div class="p">${s.price?rub(s.price):"договорная"}<span>${s.price?"за час":"под задачу"}</span></div><span class="ck">${S.team[s.id]?ui("check"):ui("plus")}</span></div></button>`).join("")}`,
+    `<button class="btn k full" data-act="close">Готово · ${teamSize()} ${plural(teamSize(),"услуга","услуги","услуг")}</button>`);
+}
+let draft=null, draftId=null;
+function openService(id){
+  draftId=id; const s=byId(id); const cur=S.team[id];
+  const minH=CONFIG.MIN_HOURS||1;
+  draft=cur?JSON.parse(JSON.stringify(cur)):{shifts:[{p:id==="04"?1:2,h:Math.max(minH,id==="05"?4:S.ev.dur)}],ask:!s.price};
+  rService();
+}
+function rService(){
+  const s=byId(draftId), minH=CONFIG.MIN_HOURS||1;
+  const sh=draft.shifts.map((x,i)=>`<div class="shift"><div class="head"><span class="mono muted">${draft.shifts.length>1?"Смена "+(i+1):"Смена"}</span>${draft.shifts.length>1?`<button class="iconbtn" style="width:34px;height:34px" data-rmshift="${i}">${ui("trash")}</button>`:""}</div>
+    <div class="row"><div><div class="h3">Человек</div></div><div class="stepper"><button data-sp="${i},p,-1" ${x.p<=1?"disabled":""}>${ui("minus")}</button><output>${x.p}</output><button class="pl" data-sp="${i},p,1">${ui("plus")}</button></div></div>
+    <div class="row"><div><div class="h3">Часов</div><span class="muted" style="font-size:12px">${CONFIG.MIN_HOURS?"мин. "+CONFIG.MIN_HOURS+" ч":"на человека"}</span></div><div class="stepper"><button data-sp="${i},h,-1" ${x.h<=minH?"disabled":""}>${ui("minus")}</button><output>${x.h}</output><button class="pl" data-sp="${i},h,1">${ui("plus")}</button></div></div>
+    ${s.price?`<div class="row" style="min-height:30px"><span class="muted" style="font-size:12.5px">${rub(s.price)} × ${x.p} × ${x.h} ч</span><b style="font:800 15px Unbounded">${rub(s.price*x.p*x.h)}</b></div>`:""}</div>`).join("");
+  const total=s.price?draft.shifts.reduce((a,x)=>a+s.price*x.p*x.h,0):null;
+  openSheet(`<div class="ib" style="background:var(--ink);color:var(--paper)">${ico(s.id)}</div><div style="flex:1;min-width:0"><span class="mono" style="color:var(--wine)">${s.id} · ${s.g}</span><h2 style="margin-top:2px">${s.name}</h2></div><button class="iconbtn" data-act="close">${ui("x")}</button>`,
+    `${s.opt?`<div class="note wine" style="margin-bottom:10px">${ui("info")}<div>Опция – подключаем по вашему запросу, за дополнительную плату.</div></div>`:""}
+     ${s.id==="04"?`<div class="note" style="margin-bottom:10px">${ui("info")}<div>От ${CONFIG.SV_FROM} человек персонала супервайзер добавляется в смету автоматически.</div></div>`:""}
+     <div class="incl" style="margin:0 0 14px">${s.inc.map(x=>`<span>${x}</span>`).join("")}</div>
+     ${sh}
+     <button class="add" style="min-height:48px" data-act="addshift">${ui("plus")}Ещё смена – например, монтаж</button>
+     ${!s.price?`<div class="card row" style="margin-top:10px"><div><div class="h3">Запросить расчёт</div><span class="muted" style="font-size:12px">менеджер посчитает под задачу</span></div><button class="sw ${draft.ask?"on":""}" data-act="ask"></button></div>`:""}`,
+    `<div style="display:flex;gap:8px">${S.team[draftId]?`<button class="btn s" data-act="rmsvc">${ui("trash")}</button>`:""}<button class="btn w full" data-act="savesvc" style="flex:1;justify-content:space-between"><span>${S.team[draftId]?"Сохранить":"Добавить в смету"}</span><span>${total!==null?rub(total):"договорная"}</span></button></div>`);
+}
+
+/* ---------- ШАГ 3 ---------- */
+function rEstimate(){
+  const c=calc(), d=startAt();
+  $("#evSum").innerHTML=`<div class="ib" style="background:var(--ink);color:var(--paper)">${ico(FORMATS[S.ev.fmt].icon)}</div><div style="flex:1"><b>${S.ev.fmt} · ${S.ev.guests} гостей</b><div class="muted" style="font-size:12.5px">${d?d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+", "+S.ev.time:"дата не указана"} · ${S.ev.dur} ч</div></div><button class="iconbtn" data-step="0">${ui("edit")}</button>`;
+  $("#est").innerHTML=c.lines.map(l=>`<div class="ln">${ico(l.id)}<div><b>${l.s.name}</b>${l.auto?' <span class="tag">авто</span>':""}<small>${l.p} чел × ${l.h} ч${l.s.price?" × "+l.s.price+" ₽":""}${l.label&&!l.auto?" · "+l.label:""}</small></div><div class="s">${l.sum!==null?rub(l.sum):`<span class="tag ${l.ask?"w":""}">${l.ask?"расчёт":"договорная"}</span>`}</div></div>`).join("");
+  let n="";
+  if(needSv()) n+=`<div class="card row" style="margin-top:12px"><div style="padding-right:8px"><div class="h3">Супервайзер на площадке</div><span class="muted" style="font-size:12.5px">в команде ${staffCount()} чел. – ${svCount()>1?`ставим ${svCount()} старших, по одному на ${CONFIG.SV_PER} человек`:`от ${CONFIG.SV_FROM} ставим старшего`}. Без супервайзера – только по вашей просьбе.</span></div><button class="sw ${S.svOff?"":"on"}" data-act="sv"></button></div>`;
+  if(isUrgent()) n+=`<div class="note wine" style="margin-top:8px">${ui("bolt")}<div><b>Срочный заказ.</b> До начала меньше ${CONFIG.URGENT_HOURS} часов – ставка выше на 30%. Соберём команду быстро.</div></div>`;
+  $("#estNotes").innerHTML=n;
+  $("#tot").innerHTML=`<div class="l"><span>Персонал · ${c.people} чел</span><span>${rub(c.base)}</span></div>
+    ${c.urg?`<div class="l w"><span>Срочность +30%</span><span>${rub(c.urg)}</span></div>`:""}
+    ${c.dog.length?`<div class="l"><span>Договорные · ${c.dog.length}</span><span>после заявки</span></div>`:""}
+    <div class="big"><span>Итого</span><b>${rub(c.total)}</b></div>`;
+}
+function estimateText(){
+  const c=calc(), d=startAt();
+  return [`T&R Events – смета`,`${S.ev.fmt}, ${S.ev.guests} гостей, ${d?d.toLocaleDateString("ru-RU")+" "+S.ev.time:""}, ${S.ev.dur} ч`,"",
+    ...c.lines.map(l=>`• ${l.s.name}: ${l.p} чел × ${l.h} ч = ${l.sum!==null?rub(l.sum):"договорная"}`),
+    ...(c.urg?[`Срочность +30%: ${rub(c.urg)}`]:[]),"",`Итого: ${rub(c.total)} (без НДС, без договорных позиций)`].join("\n");
+}
+
+/* ---------- ШАГ 4 ---------- */
+function rContacts(){
+  const u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
+  if(u){ if(!$("#cName").value) $("#cName").value=[u.first_name,u.last_name].filter(Boolean).join(" "); if(!$("#cContact").value&&u.username) $("#cContact").value="@"+u.username; }
+}
+function validContacts(){
+  let ok=true; [["#fPlace","#cPlace"],["#fName","#cName"],["#fContact","#cContact"]].forEach(([f,i])=>{ const bad=!$(i).value.trim(); $(f).classList.toggle("err",bad); if(bad) ok=false; });
+  if(!ok){ haptic("err"); toast("Заполните отмеченные поля"); } return ok;
+}
 function send(){
+  if(!validContacts()) return;
   const c=calc(), num=String(Math.floor(Math.random()*9000)+1000);
-  const data={num, lines:c.lines.map(l=>({id:l.s.id,name:l.s.name,people:l.p,hours:l.h,sum:l.sum})), urgent, supervisor:!svOff, total:c.total,
-    event:{format:$("#f_fmt").value,date:$("#f_date").value,time:$("#f_time").value,place:$("#f_place").value,dress},
-    contact:{name:$("#f_name").value,contact:$("#f_contact").value,comment:$("#f_comm").value}};
-  const finish = () => { $("#tNum").textContent="№ "+num; $("#tSum").textContent=rub(c.total); go("done"); };
-  if (!(tg && tg.initData)) { finish(); return; }          // открыто в браузере – демо без отправки
-  $("#mainL").textContent="Отправляем…";
-  fetch(API_URL+"/lead", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({initData:tg.initData, data})})
-    .then(r => { if(!r.ok) throw 0; finish(); })
-    .catch(() => {                                         // запасной путь – через сообщение боту
-      try { tg.sendData(JSON.stringify(data)); } catch(e) { toast("Не удалось отправить, попробуйте ещё раз"); mainBtn(); }
-    });
+  const data={num, event:{...S.ev, place:$("#cPlace").value.trim(), dress:S.dress}, lines:c.lines.map(l=>({id:l.id,name:l.s.name,people:l.p,hours:l.h,label:l.label,sum:l.sum,ask:!!l.ask})),
+    urgent:isUrgent(), supervisor:!S.svOff, total:Math.round(c.total),
+    contact:{name:$("#cName").value.trim(), company:$("#cCompany").value.trim(), contact:$("#cContact").value.trim(), pref:S.pref, comment:$("#cComment").value.trim()}};
+  const order={...data, created:Date.now(), status:0, team:JSON.parse(JSON.stringify(S.team)), ev:{...S.ev}};
+  const finish=()=>{ S.orders.unshift(order); store.set("orders",S.orders); S._last=order; haptic("ok"); go("done"); };
+  S.sending=true; $("#mainL").textContent="Отправляем"; $("#mainBtn").classList.add("busy");
+  const done=()=>{ S.sending=false; $("#mainBtn").classList.remove("busy"); };
+  if(!inTG) return setTimeout(()=>{ done(); finish(); },700);
+  fetch(CONFIG.API_URL+"/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:tg.initData,data})})
+    .then(r=>{ if(!r.ok) throw 0; done(); finish(); })
+    .catch(()=>{ done(); try{ tg.sendData(JSON.stringify(data)); }catch(e){ haptic("err"); toast("Не удалось отправить – проверьте интернет и попробуйте ещё раз"); rDock(); } });
 }
-if (tg && tg.BackButton) tg.BackButton.onClick(()=>({catalog:"home",item:"catalog",cart:"catalog",form:"cart"})[screen] && go({catalog:"home",item:"catalog",cart:"catalog",form:"cart"}[screen]));
 
-// ---------- Клики ----------
-document.addEventListener("click", e => {
-  const t=e.target.closest("[data-go],[data-add],[data-open],[data-tab],[data-st],[data-tg],[data-preset],[data-edit],#dress button"); if(!t) return;
-  if(t.dataset.go) go(t.dataset.go);
-  else if(t.dataset.add){ e.stopPropagation(); const id=t.dataset.add; if(cart[id]){ delete cart[id]; toast("Убрано из сметы"); } else { cur=id; go("item"); return; } haptic(); go(screen); }
-  else if(t.dataset.open){ cur=t.dataset.open; go("item"); }
-  else if(t.dataset.tab){ tab=t.dataset.tab; renderCatalog(); }
-  else if(t.dataset.st){ const [k,d]=t.dataset.st.split(","); _draft[k]=Math.max(1,Math.min(k==="h"?24:50,_draft[k]+ +d)); $("#v"+k).textContent=_draft[k];
-    const s=byId(cur); document.querySelector("#item .sum").innerHTML=`<span>${s.price?`${rub(s.price)} × ${_draft.p} чел × ${_draft.h} ч`:"Стоимость"}</span><b>${s.price?rub(s.price*_draft.p*_draft.h):"Договорная"}</b>`; mainBtn(); haptic(); }
-  else if(t.dataset.tg){ if(t.dataset.tg==="urgent") urgent=!urgent; else svOff=!svOff; renderCart(); mainBtn(); haptic(); }
-  else if(t.dataset.preset){ cart={}; Object.entries(PRESETS[t.dataset.preset]).forEach(([id,[p,h]])=>cart[id]={p,h}); toast(`Шаблон «${t.dataset.preset}» в смете`); go("cart"); }
-  else if(t.dataset.edit){ cur=t.dataset.edit; go("item"); }
-  else if(t.closest("#dress")){ document.querySelectorAll("#dress button").forEach(b=>b.classList.toggle("on",b===t)); dress=t.dataset.d; }
+/* ---------- ГОТОВО / ЗАЯВКИ ---------- */
+const STATUS=[["Заявка отправлена","смета у менеджера"],["Менеджер взял в работу","напишет вам в течение часа"],["Анкеты кандидатов","пришлём подборку с фото"],["Команда закреплена","люди за вашей датой"]];
+const tlHtml=st=>STATUS.map((x,i)=>`<div class="${i<st?"ok":i===st?"now":""}"><i>${i<st?"✓":i+1}</i><div><b>${x[0]}</b><span>${x[1]}</span></div></div>`).join("");
+function rDone(){ const o=S._last||S.orders[0]; if(!o) return; $("#tNum").textContent="№ "+o.num; $("#tSum").textContent=rub(o.total); $("#tl").innerHTML=tlHtml(o.status);
+  const tk=$("#s-done .ticket"); tk.classList.remove("drop"); $("#tl").classList.remove("rise"); void tk.offsetWidth; tk.classList.add("drop"); $("#tl").classList.add("rise"); $("#doneSub").textContent=`Менеджер T&R проверит смету и ${o.contact.pref==="Звонок"?"позвонит":"напишет"} вам в течение часа.`; }
+function rOrders(){
+  $("#ordList").innerHTML=S.orders.length?S.orders.map((o,i)=>`<button class="ord" data-order="${i}"><div class="h"><span class="mono muted">№ ${o.num} · ${new Date(o.created).toLocaleDateString("ru-RU")}</span><span class="tag ${o.status?"g":"w"}">${STATUS[o.status][0].split(" ").slice(0,2).join(" ")}</span></div><div class="h3" style="margin-top:8px">${o.event.fmt} · ${o.event.guests} гостей</div><div class="m"><span class="muted" style="font-size:12.5px">${o.lines.length} ${plural(o.lines.length,"позиция","позиции","позиций")}${o.event.date?" · "+new Date(o.event.date).toLocaleDateString("ru-RU",{day:"numeric",month:"short"}):""}</span><b>${rub(o.total)}</b></div></button>`).join("")
+   :`<div class="empty" style="padding-top:60px"><span class="amp">&amp;</span>Заявок пока нет.<br>Посчитайте первую смету – она сохранится здесь.</div>`;
+}
+function rOrder(){
+  const o=S._order; if(!o) return;
+  $("#oDate").textContent=`№ ${o.num} · ${new Date(o.created).toLocaleDateString("ru-RU")}`; $("#oTitle").textContent=o.event.fmt;
+  $("#oBody").innerHTML=`<div class="tl" style="margin-top:6px">${tlHtml(o.status)}</div>
+    <div class="est">${o.lines.map(l=>`<div class="ln">${ico(l.id)}<div><b>${l.name}</b><small>${l.people} чел × ${l.hours} ч</small></div><div class="s">${l.sum!==null?rub(l.sum):"договорная"}</div></div>`).join("")}</div>
+    <div class="tot"><div class="big" style="border:0;margin:0;padding:0"><span>Итого</span><b>${rub(o.total)}</b></div></div>
+    <button class="btn s full" style="margin-top:10px" data-act="write">${ui("chat")}Написать менеджеру</button>`;
+}
+function repeat(o){ S.team=JSON.parse(JSON.stringify(o.team)); S.ev={...o.ev, date:"", time:o.ev.time}; S.recApplied=true; toast("Состав скопирован – укажите новую дату"); go("event"); }
+
+/* ---------- ДЕМО: МЕНЕДЖЕР ---------- */
+function rMgr(){
+  const o=S._last||S.orders[0]; if(!o) return go("home");
+  $("#mgrMsg").innerHTML=`<span class="bot">T&amp;R Events – смета</span>🧾 <b>Новая смета № ${o.num}</b><br><br><b>Клиент:</b> ${o.contact.name}${o.contact.company?", "+o.contact.company:""}<br><b>Контакт:</b> ${o.contact.contact} · ${o.contact.pref.toLowerCase()}<br><br><b>${o.event.fmt}</b>, ${o.event.guests} гостей<br>${o.event.date?new Date(o.event.date).toLocaleDateString("ru-RU"):""}, ${o.event.time}, ${o.event.dur} ч<br>${o.event.place} · ${o.event.dress}<br><br>${o.lines.map(l=>`• ${l.name} – ${l.people}×${l.hours} ч = ${l.sum!==null?rub(l.sum):"договорная"}`).join("<br>")}${o.urgent?"<br>⚡ Срочно +30%":""}<br><br><b>Итого: ${rub(o.total)}</b>${o.contact.comment?`<br><br>💬 ${o.contact.comment}`:""}<br><br><span style="opacity:.7">Статус: ${STATUS[o.status][0]}</span>`;
+  $("#mgrBtns").innerHTML=`<button data-mgr="1">✋ Беру в работу</button><button data-mgr="2">📋 Анкеты отправлены</button><button data-mgr="3" class="full">✅ Команда закреплена</button>`;
+}
+
+
+/* ---------- обработка нажатий ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-act],summary"); if(!t||t.tagName==="SUMMARY") return;
+  const d=t.dataset;
+  if(d.act){
+    const a=d.act; haptic();
+    if(a==="back") back();
+    else if(a==="start") go(teamSize()?"estimate":"event");
+    else if(a==="write"){ const url="https://t.me/"+CONFIG.MANAGER; tg&&tg.openTelegramLink?tg.openTelegramLink(url):window.open(url,"_blank"); }
+    else if(a==="catalog") openCatalog();
+    else if(a==="close") closeSheet();
+    else if(a==="rec"){ applyRec(); rTeam(); rDock(); bumpTotal(); }
+    else if(a==="addshift"){ const l=draft.shifts[draft.shifts.length-1]; draft.shifts.push({p:l.p,h:Math.max(CONFIG.MIN_HOURS||1,4),label:"монтаж"}); rService(); }
+    else if(a==="ask"){ draft.ask=!draft.ask; rService(); }
+    else if(a==="savesvc"){ S.team[draftId]=draft; toast(byId(draftId).name+" – в смете"); closeSheet(); rerender(); }
+    else if(a==="rmsvc"){ delete S.team[draftId]; toast("Убрано из сметы"); closeSheet(); rerender(); }
+    else if(a==="sv"){ S.svOff=!S.svOff; if(S.svOff) toast("Без супервайзера – отметим в заявке"); rEstimate(); rDock(); bumpTotal(); }
+    else if(a==="copy"){ const txt=estimateText(); (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Смета скопирована")).catch(()=>toast("Не удалось скопировать")); }
+    else if(a==="orders") go("orders");
+    else if(a==="mgrdemo") go("mgr");
+    return;
+  }
+  if(d.tab){ haptic(); const m={home:"home",calc:teamSize()?"estimate":"event",orders:"orders"}; return go(m[d.tab],{dir:"fade"}); }
+  if(d.step!==undefined){ const k=+d.step, cur=FLOW.indexOf(S.screen); if(k<cur||k===0||(k===cur+1&&S.screen!=="event"&&teamSize())) go(FLOW[k]); else if(k>cur&&S.screen==="event"&&validEvent()) go(FLOW[Math.min(k,teamSize()?k:1)]); return; }
+  if(d.quick){ haptic(); S.ev.fmt=d.quick; S.team={}; S.recApplied=false; return go("event"); }
+  if(d.fmt){ haptic(); S.ev.fmt=d.fmt; if(S.recApplied){ S.recApplied=false; S.team={}; } return rEvent(); }
+  if(d.g){ S.ev.guests=Math.max(20,Math.min(2000,S.ev.guests+ +d.g)); haptic(); rEvent(); return tickEl("#gVal"); }
+  if(d.d){ S.ev.dur=Math.max(1,Math.min(24,S.ev.dur+ +d.d)); haptic(); $("#dVal").textContent=S.ev.dur; return tickEl("#dVal"); }
+  if(d.qdate){ S.ev.date=d.qdate; $("#fDate").classList.remove("err"); $("#dateErr").style.display="none"; haptic(); return rEvent(); }
+  if(d.cat){ catTab=d.cat; return openCatalog(); }
+  if(d.open){ haptic(); return openService(d.open); }
+  if(d.sp){ const [i,k,v]=d.sp.split(","); const x=draft.shifts[+i]; const was=x[k]; x[k]=Math.max(k==="h"?(CONFIG.MIN_HOURS||1):1,Math.min(k==="h"?24:99,x[k]+ +v)); if(x[k]===was) return haptic("err"); haptic(); rService(); const o=$$(".shift")[+i].querySelectorAll("output")[k==="p"?0:1]; o.classList.add("tick"); return; }
+  if(d.rmshift!==undefined){ draft.shifts.splice(+d.rmshift,1); haptic(); return rService(); }
+  if(d.dress){ S.dress=d.dress; $$("#dress button").forEach(b=>b.classList.toggle("on",b===t)); return haptic(); }
+  if(d.pref){ S.pref=d.pref; $$("#pref button").forEach(b=>b.classList.toggle("on",b===t)); return haptic(); }
+  if(d.order!==undefined){ S._order=S.orders[+d.order]; return go("order"); }
+  if(d.mgr){ const o=S._last||S.orders[0]; o.status=+d.mgr; store.set("orders",S.orders); haptic("ok"); toast("Клиент видит: «"+STATUS[o.status][0]+"»"); return rMgr(); }
 });
+function rerender(){ if(S.screen==="team") rTeam(); if(S.screen==="estimate") rEstimate(); rDock(); bumpTotal(); }
+$("#gRange").addEventListener("input",e=>{ S.ev.guests=+e.target.value; $("#gVal").textContent=S.ev.guests; });
+$("#evDate").addEventListener("change",e=>{ S.ev.date=e.target.value; $("#fDate").classList.remove("err"); rUntil(); });
+$("#evTime").addEventListener("change",e=>{ S.ev.time=e.target.value; $("#fTime").classList.remove("err"); rUntil(); });
+document.addEventListener("input",e=>{ const f=e.target.closest(".field"); if(f) f.classList.remove("err"); });
 
-// ---------- Демо-состояния для макетов: index.html#cart, #item, #form, #done ----------
-const h=(location.hash||"#home").slice(1);
-if(["catalog","item","cart","form","done"].includes(h)){ cart={"06":{p:3,h:6},"01":{p:6,h:8},"03":{p:1,h:8}}; cur="03"; }
-if(h==="cart2"){ cart={"06":{p:3,h:6},"01":{p:6,h:8},"08":{p:1,h:8}}; urgent=true; go("cart"); }
-else if(h==="done"){ $("#tNum").textContent="№ 2741"; $("#tSum").textContent=rub(calc().total); go("done"); }
-else go(["home","catalog","item","cart","form"].includes(h)?h:"home");
+/* ---------- старт и демо-состояния (для макетов: index.html#estimate и т.п.) ---------- */
+S.orders=store.get("orders")||[];
+S.sending=false;
+(function boot(){
+  const h=(location.hash||"").slice(1).split("&")[0];
+  const demoDate=(hrs)=>{ const d=new Date(Date.now()+hrs*36e5); S.ev.date=ymd(d); S.ev.time=String(d.getHours()).padStart(2,"0")+":00"; };
+  const demo=()=>{ S.ev={fmt:"Конференция",guests:300,date:"",time:"09:00",dur:8}; demoDate(24*12); applyRec(true); S.team["05"].shifts[0].label="монтаж"; S.team["09"]={shifts:[{p:1,h:8}],ask:true}; };
+  const demoOrder=()=>{ demo(); const c=calc(); const o={num:"2741",created:Date.now()-864e5*2,status:1,event:{...S.ev,place:"Москва, Красный Октябрь",dress:"Total black"},lines:c.lines.map(l=>({id:l.id,name:l.s.name,people:l.p,hours:l.h,sum:l.sum})),urgent:false,total:Math.round(c.total),team:JSON.parse(JSON.stringify(S.team)),ev:{...S.ev},contact:{name:"Анна",company:"Event Lab",contact:"@anna_eventlab",pref:"Telegram",comment:"Регистрация с 8:00"}};
+    const o2={...o,num:"2688",created:Date.now()-864e5*12,status:3,event:{...o.event,fmt:"Корпоратив",guests:120},total:38400,lines:o.lines.slice(0,2)}; S.orders=[o,o2]; S._last=o; S._order=o; };
+  const fill=()=>{ $("#cPlace").value="Москва, Красный Октябрь"; $("#cName").value="Анна"; $("#cCompany").value="Event Lab"; $("#cContact").value="@anna_eventlab"; $("#cComment").value="Регистрация с 8:00"; };
+  switch(h){
+    case "event": S.ev.fmt="Конференция"; S.ev.guests=300; demoDate(26); go("event"); break;
+    case "event-urgent": S.ev.guests=300; demoDate(9); go("event"); break;
+    case "team": demo(); go("team"); break;
+    case "catalog": demo(); go("team"); openCatalog(); break;
+    case "service": demo(); go("team"); openService("01"); draft.shifts.push({p:2,h:4,label:"монтаж"}); rService(); break;
+    case "estimate": demo(); go("estimate"); break;
+    case "stress": S.ev={fmt:"Форум",guests:2000,date:"",time:"08:00",dur:12}; demoDate(24*30); S.ev.time="08:00"; applyRec(true); S.team["01"].shifts.push({p:12,h:6,label:"вечерняя смена"},{p:8,h:4,label:"монтаж"}); S.team["10"]={shifts:[{p:1,h:1}],ask:true}; S.team["07"]={shifts:[{p:2,h:14}],ask:false}; go("estimate"); break;
+    case "estimate-urgent": demo(); demoDate(8); go("estimate"); break;
+    case "contacts": demo(); fill(); go("contacts"); break;
+    case "contacts-err": demo(); go("contacts"); validContacts(); break;
+    case "done": demoOrder(); S.orders[0].status=0; go("done"); break;
+    case "orders": demoOrder(); go("orders"); break;
+    case "order": demoOrder(); go("order"); break;
+    case "mgr": demoOrder(); go("mgr"); break;
+    default: go("home");
+  }
+  lastTotal=calc().total;
+})();
 </script>
-</body></html>
+</body>
+</html>

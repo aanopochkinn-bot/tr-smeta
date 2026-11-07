@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3EFE6">
+<title>T&amp;R – в команду</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+/* ===== Фирменные цвета T&R, гамма Wine ===== */
+:root{
+  --ink:#0E0E10; --paper:#F3EFE6; --wine:#8A2B25; --wl:#B5463B; --wine-50:#F5E4E1;
+  --stone:#D6D0C4; --sand:#E9E4D8; --card:#FAF7F1; --line:#E0D9CC; --mute:#66625A; --graphite:#2A2A2E;
+  --r:18px; --tap:44px; --tabs:64px; --mainh:56px;
+  --ease-out:cubic-bezier(.23,1,.32,1); --ease-drawer:cubic-bezier(.32,.72,0,1); --ease-io:cubic-bezier(.77,0,.175,1);
+}
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
+html,body{ background:var(--paper); color:var(--ink); font:500 15px/1.42 Manrope,system-ui,sans-serif; overscroll-behavior:none; -webkit-text-size-adjust:100% }
+body{ max-width:440px; margin:0 auto; min-height:100vh; min-height:100dvh; position:relative; overflow-x:hidden }
+button,input,textarea,select{ font:inherit; color:inherit }
+button{ background:none; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; transition:transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms, border-color 160ms, opacity 160ms }
+button:active{ transform:scale(.97) }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{ outline:2px solid var(--wine); outline-offset:2px }
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{ outline:none }
+.mono{ font:500 11.5px/1.3 "JetBrains Mono",monospace; letter-spacing:.12em; text-transform:uppercase }
+.amp{ font-family:"Instrument Serif",serif; font-style:italic; font-weight:400; color:var(--wine); text-transform:none; letter-spacing:0 }
+h1{ font:900 28px/1 Unbounded; text-transform:uppercase; letter-spacing:-.02em }
+h1 .amp{ font-size:1.3em; line-height:.7 }
+h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01em }
+.h3{ font:800 15px/1.25 Manrope; display:block }
+.sub{ color:var(--graphite); margin-top:8px }
+.muted{ color:var(--mute) }
+.lbl{ display:flex; justify-content:space-between; align-items:center; color:var(--mute); margin:22px 0 10px }
+.ico{ width:26px; height:26px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none }
+.ico .a{ stroke:var(--wine) } .ico .f{ fill:var(--wine); stroke:none }
+.ui{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+
+/* ===== каркас ===== */
+.screen{ display:none; padding:0 16px; padding-bottom:calc(var(--mainh) + var(--tabs) + 40px); min-height:100vh }
+.screen.on{ display:block; animation:fwd 260ms var(--ease-out) }
+.screen.on.back{ animation-name:bwd }
+.screen.on.fade{ animation-name:fade }
+.screen.flow{ padding-bottom:calc(var(--mainh) + 110px) }
+@keyframes fwd{ from{ opacity:0; transform:translateX(16px) } to{ opacity:1; transform:none } }
+@keyframes bwd{ from{ opacity:0; transform:translateX(-16px) } to{ opacity:1; transform:none } }
+@keyframes fade{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes bump{ 0%{ transform:scale(1) } 40%{ transform:scale(1.06) } 100%{ transform:scale(1) } }
+@keyframes tick{ from{ opacity:.2; transform:translateY(5px) } to{ opacity:1; transform:none } }
+@keyframes pop{ from{ opacity:0; transform:scale(.9) } to{ opacity:1; transform:none } }
+@keyframes drop{ 0%{ opacity:0; transform:translateY(-34px) rotate(-9deg) scale(.96) } 70%{ opacity:1; transform:translateY(3px) rotate(-1.8deg) } 100%{ transform:rotate(-2.5deg) } }
+@keyframes rise{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+@keyframes shake{ 0%,100%{ transform:none } 25%{ transform:translateX(-4px) } 75%{ transform:translateX(4px) } }
+.bump{ animation:bump 280ms var(--ease-out) }
+.tick{ animation:tick 180ms var(--ease-out) }
+.ticket.drop{ animation:drop 700ms var(--ease-out) both }
+.tl.rise > div{ animation:rise 360ms var(--ease-out) both }
+.tl.rise > div:nth-child(2){ animation-delay:80ms } .tl.rise > div:nth-child(3){ animation-delay:160ms } .tl.rise > div:nth-child(4){ animation-delay:240ms }
+.field.err{ animation:shake 260ms var(--ease-out) }
+.cat .ck svg, .chip svg{ animation:pop 200ms var(--ease-out) }
+.steps i{ position:relative; overflow:hidden }
+.steps i:after{ content:""; position:absolute; inset:0; background:var(--ink); transform:scaleX(0); transform-origin:left; transition:transform 360ms var(--ease-out) }
+.steps .done i:after{ transform:scaleX(1) } .steps .cur i:after{ transform:scaleX(1); background:var(--wine) }
+@media (prefers-reduced-motion: reduce){
+  .screen.on,.screen.on.back{ animation-name:fade; animation-duration:160ms }
+  .sheet{ transition:opacity 200ms; } .sheet:not(.on){ opacity:0 }
+  .ticket.drop,.tl.rise > div,.bump,.tick,.field.err{ animation:fade 200ms both }
+  button:active{ transform:none }
+}
+.top{ position:sticky; top:0; z-index:5; background:var(--paper); margin:0 -16px; padding:10px 16px 10px; display:flex; align-items:center; gap:10px }
+.top .t{ flex:1; min-width:0 }
+.top .mark{ height:22px; display:block }
+.iconbtn{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; flex:none }
+.pill{ height:36px; padding:0 14px; border-radius:20px; background:var(--ink); color:var(--paper); font:700 13px Manrope; display:inline-flex; align-items:center; gap:8px }
+.badge{ min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--wine); color:var(--paper); font:800 11px/20px Manrope; text-align:center; display:inline-block }
+
+/* шаги */
+.steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 18px }
+.steps button{ text-align:left; padding:0 }
+.steps i{ display:block; height:4px; border-radius:2px; background:var(--stone) }
+.steps span{ display:block; margin-top:6px; font:700 11px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase; color:var(--mute) }
+.steps .done span{ color:var(--ink) }
+.steps .cur span{ color:var(--wine) }
+
+/* карточки и поля */
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px }
+.dark{ background:var(--ink); color:var(--paper); border:0 }
+.dark .muted{ color:#9C978D } .dark .amp{ color:var(--wl) }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.field{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:9px 14px 10px; display:block; position:relative }
+.field:focus-within{ border-color:var(--ink) }
+.field.err{ border-color:var(--wine); background:var(--wine-50) }
+.field .k{ display:block; color:var(--mute); font:500 11px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase }
+.field input,.field textarea,.field select{ width:100%; border:0; background:none; outline:none; font:700 16px Manrope; margin-top:2px; resize:none; appearance:none; -webkit-appearance:none; min-height:26px }
+.field .hint{ position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mute); font-size:13px }
+.errtxt{ color:var(--wine); font-size:12px; margin:4px 4px 0; display:none }
+.field.err + .errtxt{ display:block }
+.chips{ display:flex; flex-wrap:wrap; gap:8px }
+.chip{ min-height:40px; padding:0 15px; border-radius:20px; border:1.5px solid var(--line); background:var(--card); font:700 14px Manrope; display:inline-flex; align-items:center; gap:7px }
+.chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink) }
+.chip .ico{ width:20px; height:20px }
+.chip.on .ico{ stroke:var(--paper) } .chip.on .ico .a{ stroke:var(--wl) }
+.seg{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--sand); border-radius:14px; padding:4px }
+.seg button{ min-height:40px; border-radius:11px; font:700 14px Manrope; color:var(--graphite) }
+.seg button.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(14,14,16,.12) }
+
+/* степпер */
+.stepper{ display:flex; align-items:center; gap:4px }
+.stepper button{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.stepper button.pl{ background:var(--ink); color:var(--paper) }
+.stepper button:disabled{ opacity:.35 }
+.stepper output{ min-width:44px; text-align:center; font:900 20px Unbounded }
+.row{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:var(--tap) }
+.range{ width:100%; accent-color:var(--wine); height:28px }
+
+/* плашки */
+.note{ display:flex; gap:10px; align-items:flex-start; background:var(--sand); border-radius:16px; padding:12px 14px; font-size:13px; line-height:1.4 }
+.note .ui{ width:18px; height:18px; color:var(--wine); margin-top:1px }
+.note.wine{ background:var(--wine-50) }
+.tag{ display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:12px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; background:var(--sand); color:var(--graphite) }
+.tag.w{ background:var(--wine); color:var(--paper) } .tag.o{ background:none; border:1px solid var(--wine); color:var(--wine) }
+.tag.g{ background:#E3EDE4; color:#2F5B36 }
+
+/* главная */
+.hero{ background:var(--ink); color:var(--paper); border-radius:24px; padding:20px; position:relative; overflow:hidden; margin-top:4px }
+.hero .big{ position:absolute; right:-20px; top:-56px; font:italic 400 220px/1 "Instrument Serif"; color:var(--wl); opacity:.22; pointer-events:none }
+.hero .logo{ height:30px; position:relative; display:block }
+.hero h1{ margin-top:26px; position:relative; font-size:27px } .hero h1 .amp{ color:var(--wl) }
+.hero p{ color:#C9C4BA; margin-top:10px; position:relative; font-size:14px }
+.acts{ display:grid; grid-template-columns:1.25fr 1fr; gap:8px; margin-top:8px }
+.act{ border-radius:20px; padding:16px; text-align:left; min-height:120px; display:flex; flex-direction:column; justify-content:space-between }
+.act b{ font:800 16px/1.2 Unbounded; text-transform:uppercase; display:block; margin-top:14px }
+.act span{ font-size:12.5px; opacity:.85; margin-top:4px; display:block }
+.act.w{ background:var(--wine); color:var(--paper) } .act.s{ background:var(--sand) }
+.how{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px }
+.how div{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 8px }
+.how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
+.how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
+.trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
+.mgr{ display:flex; align-items:center; gap:12px }
+.ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
+
+/* шаг 1 */
+.fmt{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.fmt button{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; font:700 12.5px Manrope; min-height:86px; justify-content:center }
+.fmt button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.fmt .ico{ width:28px; height:28px }
+.guests{ display:flex; align-items:baseline; gap:8px }
+.guests b{ font:900 34px/1 Unbounded } .guests span{ color:var(--mute) }
+.until{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px }
+
+/* шаг 2 */
+.rec{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px; position:relative; overflow:hidden }
+.rec .big{ position:absolute; right:-14px; bottom:-70px; font:italic 400 180px/1 "Instrument Serif"; color:var(--wl); opacity:.18 }
+.rec ul{ list-style:none; margin-top:12px; position:relative }
+.rec li{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #2A2A2E; font-size:14px }
+.rec li em{ font-style:normal; color:#9C978D; font-size:12.5px; white-space:nowrap }
+.rec .why{ font-size:12.5px; color:#C9C4BA; margin-top:10px; position:relative }
+.rec .btns{ display:flex; gap:8px; margin-top:14px; position:relative }
+.btn{ min-height:var(--tap); border-radius:14px; padding:0 16px; font:800 14px Manrope; display:inline-flex; align-items:center; justify-content:center; gap:8px }
+.btn.w{ background:var(--wine); color:var(--paper) } .btn.k{ background:var(--ink); color:var(--paper) }
+.btn.s{ background:var(--sand) } .btn.l{ background:transparent; color:inherit; border:1.5px solid currentColor }
+.btn.full{ width:100% }
+.team .item{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; margin-bottom:8px; text-align:left; width:100% }
+.ib{ width:44px; height:44px; border-radius:14px; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.item b{ display:block; font:800 14.5px/1.2 Manrope }
+.item small{ display:block; color:var(--mute); font:500 11.5px/1.35 "JetBrains Mono"; margin-top:3px }
+.item .s{ text-align:right; font:800 14px Unbounded; white-space:nowrap }
+.item .s em{ display:block; font:700 11px Manrope; font-style:normal; color:var(--wine); margin-top:3px }
+.add{ width:100%; min-height:56px; border-radius:var(--r); border:1.5px dashed var(--stone); display:flex; align-items:center; justify-content:center; gap:8px; font:800 14px Manrope; color:var(--graphite) }
+.empty{ text-align:center; padding:26px 10px; color:var(--mute) }
+.empty .amp{ font-size:80px; line-height:1; display:block }
+
+/* шторка */
+.veil{ position:fixed; inset:0; background:rgba(14,14,16,.42); z-index:20; opacity:0; pointer-events:none; transition:opacity 300ms var(--ease-out) }
+.veil.on{ opacity:1; pointer-events:auto }
+.sheet{ position:fixed; left:50%; bottom:0; transform:translate(-50%,105%); width:100%; max-width:440px; max-height:88vh; background:var(--paper); border-radius:26px 26px 0 0; z-index:21; transition:transform 420ms var(--ease-drawer); display:flex; flex-direction:column; will-change:transform }
+.sheet.closing{ transition-duration:240ms }
+.sheet.drag{ transition:none }
+.sheet .grab{ touch-action:none; cursor:grab; padding-top:2px }
+.sheet.on{ transform:translate(-50%,0) }
+.sheet .grip{ width:40px; height:5px; border-radius:3px; background:var(--stone); margin:8px auto 0 }
+.sheet .sh{ display:flex; align-items:center; gap:12px; padding:12px 16px 8px }
+.sheet .sb{ overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 16px; -webkit-overflow-scrolling:touch }
+.sheet .sf{ padding:10px 16px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--paper) }
+.cat{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); width:100%; text-align:left }
+.cat b{ display:block; font:800 14.5px Manrope } .cat small{ color:var(--mute); font-size:12px }
+.cat .p{ text-align:right; font:800 13px Unbounded; white-space:nowrap }
+.cat .p span{ display:block; font:500 11px "JetBrains Mono"; color:var(--mute); margin-top:2px; letter-spacing:.05em }
+.cat .ck{ width:28px; height:28px; border-radius:50%; border:1.5px solid var(--stone); display:flex; align-items:center; justify-content:center; margin:6px 0 0 auto }
+.cat.in .ck{ background:var(--wine); border-color:var(--wine); color:var(--paper) }
+.shift{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:8px }
+.shift .head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px }
+.shift .row + .row{ border-top:1px solid var(--line) }
+.incl{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
+.incl span{ background:var(--sand); border-radius:12px; padding:5px 10px; font:600 12px Manrope }
+
+/* шаг 3 */
+.est .ln{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); align-items:start }
+.est .ln .ico{ width:24px; height:24px; margin-top:1px }
+.est .ln b{ font:800 14px Manrope } .est .ln small{ display:block; color:var(--mute); font:500 11px/1.5 "JetBrains Mono" }
+.est .ln .s{ font:800 14px Unbounded; white-space:nowrap; text-align:right }
+.tot{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px 18px; margin-top:14px }
+.tot .l{ display:flex; justify-content:space-between; font-size:13px; color:#C9C4BA; padding:3px 0 }
+.tot .l.w{ color:#F0C9C3 }
+.tot .big{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #2A2A2E; margin-top:10px; padding-top:12px }
+.tot .big b{ font:900 30px Unbounded; display:inline-block } .tot .big span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.1em; color:#9C978D; text-transform:uppercase }
+.sw{ width:50px; height:30px; border-radius:15px; background:var(--stone); position:relative; flex:none; transition:.2s }
+.sw:after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.2s; box-shadow:0 1px 2px rgba(0,0,0,.2) }
+.sw.on{ background:var(--wine) } .sw.on:after{ left:23px }
+
+/* шаг 4 */
+.dress{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.dress button{ text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px; min-height:76px }
+.dress button b{ display:block; font:800 14px Manrope } .dress button span{ font-size:12px; color:var(--mute) }
+.dress button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.sw-dot{ width:18px; height:18px; border-radius:50%; display:inline-block; margin-bottom:6px; border:1.5px solid var(--line) }
+
+/* готово */
+.ticket{ margin:22px 4px 0; background:var(--wine); color:var(--paper); border-radius:22px; display:flex; position:relative; transform:rotate(-2.5deg); box-shadow:0 14px 30px rgba(14,14,16,.16) }
+.ticket:before,.ticket:after{ content:""; position:absolute; right:78px; width:22px; height:22px; border-radius:50%; background:var(--paper) }
+.ticket:before{ top:-11px } .ticket:after{ bottom:-11px }
+.ticket .l{ flex:1; padding:20px; border-right:2px dashed rgba(243,239,230,.55) }
+
+.ticket .l b{ display:block; font:900 32px Unbounded; margin:4px 0 } .ticket .l span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase; color:#F0C9C3 }
+.ticket .r{ width:88px; display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; transform:rotate(180deg); font:700 11px "JetBrains Mono"; letter-spacing:.14em; text-transform:uppercase }
+.tl{ margin-top:26px; position:relative }
+.tl > div{ display:grid; grid-template-columns:28px 1fr; gap:12px; padding-bottom:16px; position:relative }
+.tl > div:not(:last-child):before{ content:""; position:absolute; left:13px; top:28px; bottom:0; width:2px; background:var(--line) }
+.tl > div > i{ width:28px; height:28px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font-style:normal; font:800 12px Manrope; color:var(--mute) }
+.tl .ok > i{ background:var(--ink); color:var(--paper) } .tl .now > i{ background:var(--wine); color:var(--paper); box-shadow:0 0 0 5px var(--wine-50) }
+.tl b{ display:block; font-size:14px } .tl div div span{ font-size:12.5px; color:var(--mute) }
+
+/* мои заявки */
+.ord{ width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:8px; display:block }
+.ord .h{ display:flex; justify-content:space-between; align-items:center }
+.ord .m{ display:flex; justify-content:space-between; align-items:baseline; margin-top:10px }
+.ord .m b{ font:900 18px Unbounded }
+
+/* анкета */
+.photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.ph{ aspect-ratio:3/4; border-radius:16px; border:1.5px dashed var(--stone); background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--mute); font-size:12px; position:relative; overflow:hidden }
+.ph img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.ph input{ position:absolute; inset:0; opacity:0; cursor:pointer }
+
+/* у менеджера (демо) */
+.tgchat{ background:#0F1A24; border-radius:22px; padding:14px; margin-top:12px }
+.tgmsg{ background:#182533; color:#E9EEF3; border-radius:16px 16px 16px 4px; padding:12px 14px; font:500 13.5px/1.45 -apple-system,system-ui,sans-serif }
+.tgmsg b{ font-weight:700 } .tgmsg .bot{ color:#6AB2F2; font-weight:700; margin-bottom:6px; display:block }
+.tgbtns{ display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px }
+.tgbtns button{ background:#1E2C3A; color:#E9EEF3; border-radius:10px; min-height:40px; font:600 13px -apple-system,system-ui,sans-serif }
+.tgbtns button.full{ grid-column:1/-1 }
+
+/* нижняя панель */
+.dock{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:440px; z-index:10; background:linear-gradient(rgba(243,239,230,0),var(--paper) 22%); padding-top:18px }
+.main{ padding:0 16px 10px }
+.main button{ width:100%; height:var(--mainh); border-radius:16px; background:var(--wine); color:var(--paper); display:flex; align-items:center; justify-content:space-between; padding:0 18px; font:800 15px Unbounded; box-shadow:0 6px 18px rgba(14,14,16,.16) }
+.main button span:last-child{ font:700 14px Manrope; opacity:.9 }
+.main button.k{ background:var(--ink); box-shadow:none }
+.main button.off{ background:var(--stone); color:var(--graphite); box-shadow:none }
+.main button.busy{ opacity:.75; pointer-events:none }
+.main button.busy #mainL:after{ content:""; display:inline-block; width:14px; height:14px; margin-left:10px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; vertical-align:-2px; animation:spin 700ms linear infinite }
+@keyframes spin{ to{ transform:rotate(360deg) } }
+.main.hide{ display:none }
+.tabs{ display:grid; grid-template-columns:repeat(3,1fr); height:var(--tabs); border-top:1px solid var(--line); background:var(--paper); padding-bottom:env(safe-area-inset-bottom) }
+.tabs button{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font:700 11.5px Manrope; color:var(--mute); position:relative }
+.tabs button.on{ color:var(--ink) } .tabs button.on .ui{ color:var(--wine) }
+.tabs .badge{ position:absolute; top:6px; left:calc(50% + 6px); height:18px; min-width:18px; font-size:10px; line-height:18px }
+.tabs.hide{ display:none }
+.toast{ position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translate(-50%,-90px); opacity:0; background:var(--ink); color:var(--paper); border-radius:14px; padding:11px 16px; font:700 13px Manrope; z-index:40; transition:transform 300ms var(--ease-out), opacity 200ms; max-width:90%; text-align:center }
+.toast.on{ transform:translate(-50%,0); opacity:1 }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- 01 Хелперы: рука помощи -->
+    <symbol id="i01" viewBox="0 0 48 48"><path d="M6 30h7l9 3h7a3 3 0 0 0 0-6h-6"/><path d="M13 39l4 2h15l12-8a3 3 0 0 0-3-5l-9 5"/><path d="M6 27v14"/><path class="a" d="M30 7l1.6 3.4L35 12l-3.4 1.6L30 17l-1.6-3.4L25 12l3.4-1.6z"/></symbol>
+    <!-- 02 Промо: рупор -->
+    <symbol id="i02" viewBox="0 0 48 48"><path d="M8 20h7l17-9v26l-17-9H8z"/><path d="M15 28l3 11h5l-2-10"/><path class="a" d="M38 18c2 2 2 10 0 12M42 14c4 4 4 16 0 20"/></symbol>
+    <!-- 03 Промо-модели: силуэт + звезда -->
+    <symbol id="i03" viewBox="0 0 48 48"><circle cx="22" cy="13" r="6"/><path d="M11 42c0-10 5-17 11-17s11 7 11 17"/><path d="M17 42l5-9 5 9"/><path class="a" d="M38 6l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z"/></symbol>
+    <!-- 04 Супервайзер: рация -->
+    <symbol id="i04" viewBox="0 0 48 48"><rect x="14" y="14" width="18" height="28" rx="3"/><path d="M20 14V5"/><path d="M18 22h10M18 27h10"/><circle cx="23" cy="35" r="2.5"/><path class="a" d="M36 10c3 3 3 9 0 12M40 6c5 5 5 15 0 20"/></symbol>
+    <!-- 05 Хелперы-грузчики: коробка -->
+    <symbol id="i05" viewBox="0 0 48 48"><path d="M7 16l17-8 17 8v18l-17 8-17-8z"/><path d="M7 16l17 8 17-8M24 24v18"/><path class="a" d="M15.5 12l17 8v7"/></symbol>
+    <!-- 06 Операторы аккредитации: бейдж с QR -->
+    <symbol id="i06" viewBox="0 0 48 48"><rect x="11" y="9" width="26" height="33" rx="3"/><path d="M19 9V5h10v4"/><path d="M17 17h6v6h-6zM25 17h6v6h-6zM17 25h6v6h-6z"/><path class="a" d="M26 26h2v2h-2zM29 29h2v2h-2zM17 36h14"/></symbol>
+    <!-- 07 Водитель: хэтчбек -->
+    <symbol id="i07" viewBox="0 0 48 48"><path d="M5 31v-6l5-2 6-8h15l7 8h4l2 3v5h-4"/><path d="M14 31h18"/><circle cx="10" cy="32" r="4"/><circle cx="36" cy="32" r="4"/><path class="a" d="M18 16v7h18"/></symbol>
+    <!-- 08 Свет и съёмка: прожектор -->
+    <symbol id="i08" viewBox="0 0 48 48"><path d="M10 14h16l8-5v22l-8-5H10z"/><path d="M18 26v8M12 42l6-8 6 8"/><path class="a" d="M38 12l6-3M39 20h6M38 28l6 3"/></symbol>
+    <!-- 09 Монтажёр, рилс-мейкер: телефон 9:16 + play -->
+    <symbol id="i09" viewBox="0 0 48 48"><rect x="13" y="4" width="22" height="40" rx="4"/><path d="M21 40h6"/><path class="f" d="M20 17l11 7-11 7z"/></symbol>
+    <!-- 10 Ивент-задачи: чек-лист -->
+    <symbol id="i10" viewBox="0 0 48 48"><rect x="9" y="7" width="30" height="36" rx="3"/><path d="M18 7V4h12v3"/><path d="M23 17h10M23 26h10M23 35h7"/><path class="a" d="M14 17l2 2 3-4M14 26l2 2 3-4M14 35l2 2 3-4"/></symbol>
+    <!-- хайлайты -->
+    <symbol id="h-cases" viewBox="0 0 48 48"><rect x="7" y="13" width="34" height="24" rx="3"/><path d="M17 13V9h14v4"/><path class="a" d="M7 23h34"/></symbol>
+    <symbol id="h-team" viewBox="0 0 48 48"><circle cx="17" cy="17" r="5"/><circle cx="31" cy="17" r="5"/><path d="M7 38c0-7 4-12 10-12s10 5 10 12"/><path d="M27 27c1-1 2-1 4-1 6 0 10 5 10 12"/><path class="a" d="M24 7v4"/></symbol>
+    <symbol id="h-rev" viewBox="0 0 48 48"><path d="M8 10h32v22H22l-9 7v-7H8z"/><path class="a" d="M24 15l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z"/></symbol>
+    <symbol id="h-job" viewBox="0 0 48 48"><circle cx="21" cy="16" r="6"/><path d="M9 40c0-9 5-15 12-15 3 0 5 1 7 2"/><path class="a" d="M36 28v12M30 34h12"/></symbol>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="u-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="u-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></symbol>
+    <symbol id="u-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></symbol>
+    <symbol id="u-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></symbol>
+    <symbol id="u-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="u-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="u-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="u-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="u-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="u-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="u-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></symbol>
+    <symbol id="u-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="u-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+    <symbol id="u-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="u-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+    <symbol id="u-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="u-repeat" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+    <symbol id="u-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  </defs>
+</svg>
+
+<style>
+/* ===== дополнения для бота набора ===== */
+.roles{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.role{ text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:12px; display:flex; flex-direction:column; gap:8px; min-height:118px; position:relative }
+.role .ico{ width:30px; height:30px }
+.role b{ display:block; font:800 14px/1.2 Manrope; margin-bottom:2px } .role span{ display:block } .role .tag{ display:inline-flex; white-space:nowrap } .role span{ font-size:12px; color:var(--mute); line-height:1.35 }
+.role.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.role .ck{ position:absolute; top:10px; right:10px; width:24px; height:24px; border-radius:50%; border:1.5px solid var(--stone); display:flex; align-items:center; justify-content:center }
+.role.on .ck{ background:var(--wine); border-color:var(--wine); color:var(--paper) }
+.role .ck .ui{ width:14px; height:14px }
+.perks{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.perks div{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.perks b{ display:block; font-size:13.5px; margin-top:6px } .perks span{ font-size:12px; color:var(--mute) }
+.faq details{ border-bottom:1px solid var(--line); padding:12px 0 }
+.faq summary{ font:800 14.5px Manrope; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; min-height:28px }
+.faq summary::-webkit-details-marker{ display:none }
+.faq summary:after{ content:"+"; font:700 20px Manrope; color:var(--wine); transition:transform 200ms var(--ease-out) }
+.faq details[open] summary:after{ transform:rotate(45deg) }
+.faq p{ font-size:13.5px; color:var(--graphite); margin-top:6px }
+.tips{ display:grid; gap:6px; margin-top:12px }
+.tips div{ display:flex; gap:8px; font-size:13px; color:var(--graphite) }
+.tips .ui{ width:18px; height:18px; color:var(--wine); flex:none }
+.ph .rm{ position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; background:rgba(14,14,16,.7); color:#fff; display:flex; align-items:center; justify-content:center; z-index:2 }
+.ph .rm .ui{ width:14px; height:14px }
+.ph .n{ position:absolute; left:8px; bottom:8px; z-index:2; background:rgba(14,14,16,.7); color:#fff; border-radius:8px; padding:2px 7px; font:700 11px Manrope }
+.steps.s3{ grid-template-columns:repeat(3,1fr) }
+.badge-card{ width:100%; max-width:280px; margin:22px auto 0; background:var(--ink); color:var(--paper); border-radius:20px; padding:18px; position:relative; transform:rotate(-2deg); box-shadow:0 14px 30px rgba(14,14,16,.18) }
+.badge-card .hole{ width:44px; height:8px; border-radius:4px; background:var(--paper); margin:0 auto 14px }
+.badge-card .perf{ border-top:2px dashed #3A3A3E; margin:14px -18px }
+.badge-card .role-t{ display:inline-block; background:var(--wl); color:var(--paper); border-radius:12px; padding:3px 10px; font:700 11.5px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase }
+.badge-card b{ display:block; font:900 20px/1.1 Unbounded; text-transform:uppercase; margin-top:10px }
+.badge-card.drop{ animation:drop 700ms var(--ease-out) both }
+</style>
+
+<!-- ======================= ГЛАВНАЯ ======================= -->
+<section class="screen" id="s-home">
+  <div class="top"><div class="t"><svg style="height:22px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 453" fill="none"><path transform="translate(73.70 369.08)" fill="#0E0E10" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#8A2B25" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/></svg></div><span class="mono muted">Набор в команду</span></div>
+  <div class="hero"><div class="big">&amp;</div>
+    <div class="logo"><svg style="height:100%;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 534" fill="none"><path transform="translate(73.70 369.08)" fill="#F3EFE6" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#B5463B" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/><path transform="translate(182.93 453.82)" fill="#F3EFE6" d="M3.00218505859375 0.0V-24.82H17.878907470703126V-21.117025634765625H7.181848388671876V-14.666251953125H16.688907470703125V-10.977386840820314H7.181848388671876V-3.7029743652343754H17.878907470703126V0.0H3.00218505859375Z M46.55549609375001 0.0 40.3027313232422 -24.82H44.69795764160157L48.456470458984384 -8.652176147460938Q48.739344482421885 -7.441117065429688 49.015508361816416 -6.077297668457032Q49.29167224121095 -4.713478271484376 49.42767224121095 -3.871806030273438Q49.563672241210945 -4.713478271484376 49.80294537353517 -6.077297668457032Q50.04221850585938 -7.441117065429688 50.32509252929688 -8.67206689453125L54.00982385253907 -24.82H58.297268676757824L52.07017614746095 0.0H46.55549609375001Z M81.20218505859377 0.0V-24.82H96.07890747070314V-21.117025634765625H85.3818483886719V-14.666251953125H94.88890747070315V-10.977386840820314H85.3818483886719V-3.7029743652343754H96.07890747070314V0.0H81.20218505859377Z M119.76327758789066 0.0V-24.82H124.93726867675784L131.84298327636722 -4.76344482421875Q131.7550925292969 -5.8521337890625 131.64025640869144 -7.33182275390625Q131.52542028808597 -8.811511718750001 131.45452954101566 -10.347637695312502Q131.38363879394535 -11.883763671875 131.38363879394535 -13.067982177734375V-24.82H135.2367224121094V0.0H130.06273132324222L123.21090747070315 -20.056555175781252Q123.29879821777347 -19.08142919921875 123.38668896484377 -17.69124755859375Q123.47457971191409 -16.301067993164065 123.5454704589844 -14.834559631347657Q123.61636120605472 -13.36805126953125 123.61636120605472 -12.149832763671876V0.0H119.76327758789066Z M164.47327758789066 0.0V-20.892445922851564H157.97163879394535V-24.83410925292969H175.22836120605473V-20.892445922851564H168.7267224121094V0.0H164.47327758789066Z M205.75643701171882 0.34Q203.20898327636723 0.34 201.34858416748054 -0.515781494140625Q199.4881850585938 -1.3715629882812501 198.47651281738288 -2.9413444824218753Q197.46484057617192 -4.5111259765625 197.45073132324225 -6.6589074707031255H201.704176147461Q201.704176147461 -5.146940917968751 202.80015942382818 -4.267793762207032Q203.89614270019536 -3.3886466064453127 205.81610925292975 -3.3886466064453127Q207.63985729980476 -3.3886466064453127 208.66784057617193 -4.243739135742188Q209.69582385253912 -5.098831665039063 209.69582385253912 -6.610798217773438Q209.69582385253912 -7.868109252929688 208.96644146728522 -8.791201782226564Q208.2370590820313 -9.714294311523439 206.90018505859382 -10.056840576171876L204.03145373535162 -10.832370117187502Q201.12342028808598 -11.594479370117188 199.52762207031256 -13.539878479003907Q197.9318238525391 -15.485277587890627 197.9318238525391 -18.225857299804687Q197.9318238525391 -20.33131103515625 198.89249609375005 -21.889874023437503Q199.853168334961 -23.448437011718752 201.60451281738287 -24.311274169921877Q203.35585729980474 -25.17410925292969 205.74487402343755 -25.17410925292969Q209.32712597656257 -25.17410925292969 211.4483065795899 -23.315327758789063Q213.56948718261725 -21.456546264648438 213.58359643554692 -18.331092529296875H209.33015161132818Q209.33015161132818 -19.789168334960937 208.3842775878907 -20.617314453125Q207.43840356445318 -21.445462646484376 205.69098327636723 -21.445462646484376Q204.01734448242195 -21.445462646484376 203.1013065795899 -20.662532958984375Q202.18526867675786 -19.87960534667969 202.18526867675786 -18.458075805664063Q202.18526867675786 -17.186655517578128 202.89186956787114 -16.273508361816408Q203.59847045898442 -15.360361206054689 204.90967224121098 -15.003705688476563L207.8720758056641 -14.194176147460938Q210.83145373535163 -13.432066894531252 212.39036120605473 -11.512340026855469Q213.94926867675787 -9.592613159179688 213.94926867675787 -6.778251953125Q213.94926867675787 -4.65868896484375 212.92765209960942 -3.0491259765625003Q211.90603344726568 -1.4395629882812502 210.0696889648438 -0.549781494140625Q208.23334448242193 0.34 205.75643701171882 0.34Z M274.9027313232423 0.0 281.1439331054689 -24.82H286.6303946533204L292.8972686767579 0.0H288.57004235839855L287.1966220703126 -6.019168334960938H280.6174871826173L279.24406689453133 0.0H274.9027313232423ZM281.3687224121095 -9.478361206054688H286.4113868408204L284.925092529297 -16.153714599609376Q284.5601092529298 -17.812555175781252 284.28394537353523 -19.165155029296876Q284.0077814941407 -20.517756958007816 283.9000000000001 -21.118882934570316Q283.79221850585947 -20.517756958007816 283.53594537353524 -19.17510144042969Q283.279672241211 -17.832445922851562 282.89479821777354 -16.187714599609375L281.3687224121095 -9.478361206054688Z M323.14594537353526 0.34Q320.75276477050795 0.34 318.9744749145509 -0.5597268676757813Q317.19618505859387 -1.4594537353515626 316.21562207031263 -3.114235229492188Q315.2350590820314 -4.769016723632813 315.2350590820314 -6.998907470703125V-17.821092529296877Q315.2350590820314 -20.08498327636719 316.21562207031263 -21.722764770507816Q317.19618505859387 -23.360546264648438 318.9744749145509 -24.26027416992188Q320.75276477050795 -25.16 323.14594537353526 -25.16Q325.5391259765626 -25.16 327.30041583251966 -24.253218505859376Q329.0617056884767 -23.346437011718752 330.0352140502931 -21.713158691406253Q331.0087224121095 -20.07988037109375 331.0087224121095 -17.821092529296877H326.75527758789076Q326.75527758789076 -19.57105908203125 325.8057076416017 -20.501207275390627Q324.85613873291027 -21.43135339355469 323.13230407714855 -21.43135339355469Q321.4084704589845 -21.43135339355469 320.4484871826173 -20.504220458984378Q319.4885039062501 -19.577087524414065 319.4885039062501 -17.835201782226562V-6.998907470703125Q319.4885039062501 -5.270361602783203 320.4484871826173 -4.322449478149414Q321.4084704589845 -3.3745373535156253 323.13230407714855 -3.3745373535156253Q324.85613873291027 -3.3745373535156253 325.8057076416017 -4.3245778503417975Q326.75527758789076 -5.274618347167969 326.75527758789076 -7.0070448303222665V-9.521857299804688H322.51890747070325V-13.20494091796875H331.0087224121095V-6.998907470703125Q331.0087224121095 -4.774869293212891 330.0352140502931 -3.1242161407470705Q329.0617056884767 -1.4735629882812502 327.30041583251966 -0.5667814941406251Q325.5391259765626 0.34 323.14594537353526 0.34Z M354.9021850585939 0.0V-24.82H369.7789074707033V-21.117025634765625H359.08184838867203V-14.666251953125H368.58890747070325V-10.977386840820314H359.08184838867203V-3.7029743652343754H369.7789074707033V0.0H354.9021850585939Z M393.4632775878908 0.0V-24.82H398.63726867675797L405.54298327636735 -4.76344482421875Q405.455092529297 -5.8521337890625 405.3402564086916 -7.33182275390625Q405.2254202880861 -8.811511718750001 405.1545295410158 -10.347637695312502Q405.0836387939455 -11.883763671875 405.0836387939455 -13.067982177734375V-24.82H408.93672241210953V0.0H403.76273132324235L396.9109074707033 -20.056555175781252Q396.9987982177736 -19.08142919921875 397.0866889648439 -17.69124755859375Q397.17457971191425 -16.301067993164065 397.2454704589845 -14.834559631347657Q397.31636120605486 -13.36805126953125 397.31636120605486 -12.149832763671876V0.0H393.4632775878908Z M440.4459453735353 0.34Q438.052764770508 0.34 436.274474914551 -0.5597268676757813Q434.49618505859394 -1.4594537353515626 433.5156220703127 -3.114235229492188Q432.53505908203147 -4.769016723632813 432.53505908203147 -6.998907470703125V-17.821092529296877Q432.53505908203147 -20.08498327636719 433.5156220703127 -21.722764770507816Q434.49618505859394 -23.360546264648438 436.274474914551 -24.26027416992188Q438.052764770508 -25.16 440.4459453735353 -25.16Q442.8391259765627 -25.16 444.60041583251973 -24.253218505859376Q446.3617056884768 -23.346437011718752 447.3352140502932 -21.713158691406253Q448.30872241210955 -20.07988037109375 448.30872241210955 -17.821092529296877H444.0552775878908Q444.0552775878908 -19.57105908203125 443.1057076416018 -20.501207275390627Q442.15613873291034 -21.43135339355469 440.4323040771486 -21.43135339355469Q438.70847045898455 -21.43135339355469 437.7484871826174 -20.504220458984378Q436.7885039062502 -19.577087524414065 436.7885039062502 -17.835201782226562V-6.998907470703125Q436.7885039062502 -5.263743286132813 437.7484871826174 -4.326194946289063Q438.70847045898455 -3.3886466064453127 440.4323040771486 -3.3886466064453127Q442.15613873291034 -3.3886466064453127 443.1057076416018 -4.326194946289063Q444.0552775878908 -5.263743286132813 444.0552775878908 -6.998907470703125H448.30872241210955Q448.30872241210955 -4.7831259765625 447.3352140502932 -3.128344482421875Q446.3617056884768 -1.4735629882812502 444.60041583251973 -0.5667814941406251Q442.8391259765627 0.34 440.4459453735353 0.34Z M477.27327758789085 0.0V-9.023420288085939L469.992185058594 -24.82H474.42719287109395L478.3029832763674 -16.211259765625Q478.75076477050806 -15.2021337890625 479.0583823852541 -14.219264221191407Q479.3660000000002 -13.236394653320314 479.47378149414084 -12.666033447265626Q479.60145373535175 -13.236394653320314 479.8962352294924 -14.219264221191407Q480.191016723633 -15.2021337890625 480.61890747070333 -16.211259765625L484.39269787597675 -24.82H488.8078149414065L481.5267224121096 -9.023420288085939V0.0H477.27327758789085Z"/></svg></div>
+    <h1>Работа на ивентах <span class="amp">с T&amp;R</span></h1>
+    <p>Конференции, корпоративы, выставки и промо в Москве. Заполните анкету за 3 минуты – позовём на ближайшие проекты.</p>
+  </div>
+  <div class="lbl"><span class="mono">Почему с нами</span></div>
+  <div class="perks">
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-calc"/></svg><b>Оплата за каждый час</b><span>ставку называем заранее</span></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-info"/></svg><b>Бриф перед сменой</b><span>знаете задачу и тайминг</span></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-team"/></svg><b>Старший рядом</b><span>супервайзер на площадке</span></div>
+    <div><svg class="ui" style="color:var(--wine)"><use href="#u-repeat"/></svg><b>Гибкий график</b><span>берёте только удобные даты</span></div>
+  </div>
+  <div class="lbl"><span class="mono">Кого ищем</span><span class="mono">8 ролей</span></div>
+  <div class="roles" id="rolesHome"></div>
+  <div class="lbl"><span class="mono">Как попасть в команду</span></div>
+  <div class="how" style="grid-template-columns:repeat(3,1fr)"><div><b>01</b><span>Анкета и фото</span></div><div><b>02</b><span>Короткий созвон</span></div><div><b>03</b><span>Бриф и первая смена</span></div></div>
+  <div class="lbl"><span class="mono">Частые вопросы</span></div>
+  <div class="faq">
+    <details><summary>Нужен ли опыт?</summary><p>Нет. На хелперов и регистрацию берём без опыта – всё объясним на брифе. Для промо-моделей и супервайзеров опыт важен.</p></details>
+    <details><summary>Как платите?</summary><p>За каждый отработанный час по ставке роли. Ставку и порядок оплаты называем до смены – без сюрпризов.</p></details>
+    <details><summary>Что надеть?</summary><p>Чаще всего total black: чёрный верх, низ и обувь. Если у клиента своя форма – выдадим на месте.</p></details>
+    <details><summary>Можно совмещать с учёбой?</summary><p>Да. Отметьте в анкете удобные дни – будем звать только на них.</p></details>
+  </div>
+</section>
+
+<!-- ======================= ШАГ 1. РОЛЬ ======================= -->
+<section class="screen flow" id="s-role">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 1 из 3</span><h2>Роль и опыт</h2></div></div>
+  <div class="steps s3" data-steps></div>
+  <span class="mono muted" style="display:block;margin-bottom:10px">Кем хотите работать · можно несколько</span>
+  <div class="errtxt" id="rolesErr" style="margin:-4px 0 10px">Выберите хотя бы одну роль</div>
+  <div class="roles" id="rolesPick"></div>
+  <div class="lbl"><span class="mono">Опыт на ивентах</span></div>
+  <div class="seg" id="exp"><button data-exp="Нет">Нет</button><button data-exp="До 5" class="on">До 5</button><button data-exp="5–20">5–20</button><button data-exp="20+">20+</button></div>
+  <div class="lbl"><span class="mono">Когда можете работать</span></div>
+  <div class="chips" id="days"></div>
+</section>
+
+<!-- ======================= ШАГ 2. ФОТО ======================= -->
+<section class="screen flow" id="s-photo">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 2 из 3</span><h2>Фото</h2></div></div>
+  <div class="steps s3" data-steps></div>
+  <p class="sub" style="margin:0 0 14px">Клиент видит фото в подборке кандидатов, поэтому они решают многое.</p>
+  <div class="photos" id="photos"></div>
+  <div class="errtxt" id="photoErr">Добавьте хотя бы фото лица</div>
+  <div class="tips">
+    <div><svg class="ui"><use href="#u-check"/></svg>Дневной свет, лицо без фильтров</div>
+    <div><svg class="ui"><use href="#u-check"/></svg>В полный рост, лучше в чёрном</div>
+    <div><svg class="ui"><use href="#u-check"/></svg>Без солнечных очков и чужих людей в кадре</div>
+  </div>
+</section>
+
+<!-- ======================= ШАГ 3. О СЕБЕ ======================= -->
+<section class="screen flow" id="s-about">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Шаг 3 из 3</span><h2>О себе</h2></div></div>
+  <div class="steps s3" data-steps></div>
+  <label class="field" id="fName" style="margin-bottom:6px"><span class="k">Имя и фамилия</span><input id="jName" autocomplete="name" enterkeyhint="next"></label>
+  <div class="errtxt">Как к вам обращаться?</div>
+  <div class="grid2" style="margin-bottom:6px">
+    <label class="field" id="fAge"><span class="k">Возраст</span><input id="jAge" inputmode="numeric" maxlength="2" enterkeyhint="next"></label>
+    <label class="field"><span class="k">Рост, см</span><input id="jHeight" inputmode="numeric" maxlength="3" enterkeyhint="next"></label>
+  </div>
+  <div class="errtxt" id="ageErr">Работаем с 18 лет</div>
+  <div class="grid2" style="margin-bottom:6px">
+    <label class="field"><span class="k">Размер одежды</span><select id="jSize"><option>XS</option><option>S</option><option selected>M</option><option>L</option><option>XL</option><option>XXL</option></select></label>
+    <label class="field"><span class="k">Метро / район</span><input id="jMetro" placeholder="Таганская" enterkeyhint="next"></label>
+  </div>
+  <label class="field" id="fContact" style="margin-bottom:6px"><span class="k">Telegram или телефон</span><input id="jContact" autocapitalize="none" autocorrect="off" enterkeyhint="next"></label>
+  <div class="errtxt">Нужен контакт, чтобы позвать вас на проект</div>
+  <label class="field"><span class="k">О себе</span><textarea id="jAbout" rows="2" placeholder="опыт, языки, медкнижка, авто"></textarea></label>
+</section>
+
+<!-- ======================= ГОТОВО ======================= -->
+<section class="screen flow" id="s-done">
+  <div class="top"><div class="t"><svg style="height:22px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 453" fill="none"><path transform="translate(73.70 369.08)" fill="#0E0E10" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#8A2B25" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/></svg></div><span class="mono muted">Анкета отправлена</span></div>
+  <h1 style="margin-top:10px">Анкета <span class="amp">у нас</span></h1>
+  <p class="sub">Посмотрим анкету и напишем в течение 2 дней. Не отключайте уведомления бота – так придёт приглашение.</p>
+  <div class="badge-card" id="badge"><div class="hole"></div><svg style="height:26px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 534" fill="none"><path transform="translate(73.70 369.08)" fill="#F3EFE6" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#B5463B" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/><path transform="translate(182.93 453.82)" fill="#F3EFE6" d="M3.00218505859375 0.0V-24.82H17.878907470703126V-21.117025634765625H7.181848388671876V-14.666251953125H16.688907470703125V-10.977386840820314H7.181848388671876V-3.7029743652343754H17.878907470703126V0.0H3.00218505859375Z M46.55549609375001 0.0 40.3027313232422 -24.82H44.69795764160157L48.456470458984384 -8.652176147460938Q48.739344482421885 -7.441117065429688 49.015508361816416 -6.077297668457032Q49.29167224121095 -4.713478271484376 49.42767224121095 -3.871806030273438Q49.563672241210945 -4.713478271484376 49.80294537353517 -6.077297668457032Q50.04221850585938 -7.441117065429688 50.32509252929688 -8.67206689453125L54.00982385253907 -24.82H58.297268676757824L52.07017614746095 0.0H46.55549609375001Z M81.20218505859377 0.0V-24.82H96.07890747070314V-21.117025634765625H85.3818483886719V-14.666251953125H94.88890747070315V-10.977386840820314H85.3818483886719V-3.7029743652343754H96.07890747070314V0.0H81.20218505859377Z M119.76327758789066 0.0V-24.82H124.93726867675784L131.84298327636722 -4.76344482421875Q131.7550925292969 -5.8521337890625 131.64025640869144 -7.33182275390625Q131.52542028808597 -8.811511718750001 131.45452954101566 -10.347637695312502Q131.38363879394535 -11.883763671875 131.38363879394535 -13.067982177734375V-24.82H135.2367224121094V0.0H130.06273132324222L123.21090747070315 -20.056555175781252Q123.29879821777347 -19.08142919921875 123.38668896484377 -17.69124755859375Q123.47457971191409 -16.301067993164065 123.5454704589844 -14.834559631347657Q123.61636120605472 -13.36805126953125 123.61636120605472 -12.149832763671876V0.0H119.76327758789066Z M164.47327758789066 0.0V-20.892445922851564H157.97163879394535V-24.83410925292969H175.22836120605473V-20.892445922851564H168.7267224121094V0.0H164.47327758789066Z M205.75643701171882 0.34Q203.20898327636723 0.34 201.34858416748054 -0.515781494140625Q199.4881850585938 -1.3715629882812501 198.47651281738288 -2.9413444824218753Q197.46484057617192 -4.5111259765625 197.45073132324225 -6.6589074707031255H201.704176147461Q201.704176147461 -5.146940917968751 202.80015942382818 -4.267793762207032Q203.89614270019536 -3.3886466064453127 205.81610925292975 -3.3886466064453127Q207.63985729980476 -3.3886466064453127 208.66784057617193 -4.243739135742188Q209.69582385253912 -5.098831665039063 209.69582385253912 -6.610798217773438Q209.69582385253912 -7.868109252929688 208.96644146728522 -8.791201782226564Q208.2370590820313 -9.714294311523439 206.90018505859382 -10.056840576171876L204.03145373535162 -10.832370117187502Q201.12342028808598 -11.594479370117188 199.52762207031256 -13.539878479003907Q197.9318238525391 -15.485277587890627 197.9318238525391 -18.225857299804687Q197.9318238525391 -20.33131103515625 198.89249609375005 -21.889874023437503Q199.853168334961 -23.448437011718752 201.60451281738287 -24.311274169921877Q203.35585729980474 -25.17410925292969 205.74487402343755 -25.17410925292969Q209.32712597656257 -25.17410925292969 211.4483065795899 -23.315327758789063Q213.56948718261725 -21.456546264648438 213.58359643554692 -18.331092529296875H209.33015161132818Q209.33015161132818 -19.789168334960937 208.3842775878907 -20.617314453125Q207.43840356445318 -21.445462646484376 205.69098327636723 -21.445462646484376Q204.01734448242195 -21.445462646484376 203.1013065795899 -20.662532958984375Q202.18526867675786 -19.87960534667969 202.18526867675786 -18.458075805664063Q202.18526867675786 -17.186655517578128 202.89186956787114 -16.273508361816408Q203.59847045898442 -15.360361206054689 204.90967224121098 -15.003705688476563L207.8720758056641 -14.194176147460938Q210.83145373535163 -13.432066894531252 212.39036120605473 -11.512340026855469Q213.94926867675787 -9.592613159179688 213.94926867675787 -6.778251953125Q213.94926867675787 -4.65868896484375 212.92765209960942 -3.0491259765625003Q211.90603344726568 -1.4395629882812502 210.0696889648438 -0.549781494140625Q208.23334448242193 0.34 205.75643701171882 0.34Z M274.9027313232423 0.0 281.1439331054689 -24.82H286.6303946533204L292.8972686767579 0.0H288.57004235839855L287.1966220703126 -6.019168334960938H280.6174871826173L279.24406689453133 0.0H274.9027313232423ZM281.3687224121095 -9.478361206054688H286.4113868408204L284.925092529297 -16.153714599609376Q284.5601092529298 -17.812555175781252 284.28394537353523 -19.165155029296876Q284.0077814941407 -20.517756958007816 283.9000000000001 -21.118882934570316Q283.79221850585947 -20.517756958007816 283.53594537353524 -19.17510144042969Q283.279672241211 -17.832445922851562 282.89479821777354 -16.187714599609375L281.3687224121095 -9.478361206054688Z M323.14594537353526 0.34Q320.75276477050795 0.34 318.9744749145509 -0.5597268676757813Q317.19618505859387 -1.4594537353515626 316.21562207031263 -3.114235229492188Q315.2350590820314 -4.769016723632813 315.2350590820314 -6.998907470703125V-17.821092529296877Q315.2350590820314 -20.08498327636719 316.21562207031263 -21.722764770507816Q317.19618505859387 -23.360546264648438 318.9744749145509 -24.26027416992188Q320.75276477050795 -25.16 323.14594537353526 -25.16Q325.5391259765626 -25.16 327.30041583251966 -24.253218505859376Q329.0617056884767 -23.346437011718752 330.0352140502931 -21.713158691406253Q331.0087224121095 -20.07988037109375 331.0087224121095 -17.821092529296877H326.75527758789076Q326.75527758789076 -19.57105908203125 325.8057076416017 -20.501207275390627Q324.85613873291027 -21.43135339355469 323.13230407714855 -21.43135339355469Q321.4084704589845 -21.43135339355469 320.4484871826173 -20.504220458984378Q319.4885039062501 -19.577087524414065 319.4885039062501 -17.835201782226562V-6.998907470703125Q319.4885039062501 -5.270361602783203 320.4484871826173 -4.322449478149414Q321.4084704589845 -3.3745373535156253 323.13230407714855 -3.3745373535156253Q324.85613873291027 -3.3745373535156253 325.8057076416017 -4.3245778503417975Q326.75527758789076 -5.274618347167969 326.75527758789076 -7.0070448303222665V-9.521857299804688H322.51890747070325V-13.20494091796875H331.0087224121095V-6.998907470703125Q331.0087224121095 -4.774869293212891 330.0352140502931 -3.1242161407470705Q329.0617056884767 -1.4735629882812502 327.30041583251966 -0.5667814941406251Q325.5391259765626 0.34 323.14594537353526 0.34Z M354.9021850585939 0.0V-24.82H369.7789074707033V-21.117025634765625H359.08184838867203V-14.666251953125H368.58890747070325V-10.977386840820314H359.08184838867203V-3.7029743652343754H369.7789074707033V0.0H354.9021850585939Z M393.4632775878908 0.0V-24.82H398.63726867675797L405.54298327636735 -4.76344482421875Q405.455092529297 -5.8521337890625 405.3402564086916 -7.33182275390625Q405.2254202880861 -8.811511718750001 405.1545295410158 -10.347637695312502Q405.0836387939455 -11.883763671875 405.0836387939455 -13.067982177734375V-24.82H408.93672241210953V0.0H403.76273132324235L396.9109074707033 -20.056555175781252Q396.9987982177736 -19.08142919921875 397.0866889648439 -17.69124755859375Q397.17457971191425 -16.301067993164065 397.2454704589845 -14.834559631347657Q397.31636120605486 -13.36805126953125 397.31636120605486 -12.149832763671876V0.0H393.4632775878908Z M440.4459453735353 0.34Q438.052764770508 0.34 436.274474914551 -0.5597268676757813Q434.49618505859394 -1.4594537353515626 433.5156220703127 -3.114235229492188Q432.53505908203147 -4.769016723632813 432.53505908203147 -6.998907470703125V-17.821092529296877Q432.53505908203147 -20.08498327636719 433.5156220703127 -21.722764770507816Q434.49618505859394 -23.360546264648438 436.274474914551 -24.26027416992188Q438.052764770508 -25.16 440.4459453735353 -25.16Q442.8391259765627 -25.16 444.60041583251973 -24.253218505859376Q446.3617056884768 -23.346437011718752 447.3352140502932 -21.713158691406253Q448.30872241210955 -20.07988037109375 448.30872241210955 -17.821092529296877H444.0552775878908Q444.0552775878908 -19.57105908203125 443.1057076416018 -20.501207275390627Q442.15613873291034 -21.43135339355469 440.4323040771486 -21.43135339355469Q438.70847045898455 -21.43135339355469 437.7484871826174 -20.504220458984378Q436.7885039062502 -19.577087524414065 436.7885039062502 -17.835201782226562V-6.998907470703125Q436.7885039062502 -5.263743286132813 437.7484871826174 -4.326194946289063Q438.70847045898455 -3.3886466064453127 440.4323040771486 -3.3886466064453127Q442.15613873291034 -3.3886466064453127 443.1057076416018 -4.326194946289063Q444.0552775878908 -5.263743286132813 444.0552775878908 -6.998907470703125H448.30872241210955Q448.30872241210955 -4.7831259765625 447.3352140502932 -3.128344482421875Q446.3617056884768 -1.4735629882812502 444.60041583251973 -0.5667814941406251Q442.8391259765627 0.34 440.4459453735353 0.34Z M477.27327758789085 0.0V-9.023420288085939L469.992185058594 -24.82H474.42719287109395L478.3029832763674 -16.211259765625Q478.75076477050806 -15.2021337890625 479.0583823852541 -14.219264221191407Q479.3660000000002 -13.236394653320314 479.47378149414084 -12.666033447265626Q479.60145373535175 -13.236394653320314 479.8962352294924 -14.219264221191407Q480.191016723633 -15.2021337890625 480.61890747070333 -16.211259765625L484.39269787597675 -24.82H488.8078149414065L481.5267224121096 -9.023420288085939V0.0H477.27327758789085Z"/></svg><div class="perf"></div><span class="role-t" id="bRole">Хелпер</span><b id="bName">Имя Фамилия</b><div class="mono" style="color:#9C978D;margin-top:12px;display:flex;justify-content:space-between"><span>Кандидат</span><span id="bNum">№ 000</span></div></div>
+  <div class="tl rise" id="tl" style="margin-top:28px"></div>
+  <div class="grid2"><button class="btn s" data-act="share">Позвать друга</button><button class="btn s" data-act="mgr">Вид у менеджера</button></div>
+</section>
+
+<!-- ======================= ДЕМО: У МЕНЕДЖЕРА ======================= -->
+<section class="screen flow" id="s-mgr">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Демо</span><h2>Анкета у менеджера</h2></div></div>
+  <p class="sub" style="margin-top:0">Так анкета приходит в тему «Персонал / База». Кнопки меняют статус – кандидат видит его в боте.</p>
+  <div class="tgchat"><div class="tgmsg" id="mgrMsg"></div><div class="tgbtns" id="mgrBtns"></div></div>
+</section>
+
+<div class="dock" id="dock"><div class="main" id="main"><button id="mainBtn"><span id="mainL"></span><span id="mainR"></span></button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   T&R – бот набора в команду (анкета исполнителя). Версия 1.
+   ============================================================ */
+const CONFIG = { API_URL:"https://ЛОГИН.pythonanywhere.com", BOT_SHARE:"https://t.me/tr_events_team_bot", MIN_AGE:18 };
+const ROLES = [
+  {id:"01", name:"Хелпер", d:"зоны, гардероб, материалы", need:"без опыта"},
+  {id:"02", name:"Промо", d:"сэмплинг, активации, стенд", need:"общительность"},
+  {id:"03", name:"Промо-модель", d:"выставки, презентации", need:"опыт"},
+  {id:"04", name:"Супервайзер", d:"старший смены", need:"опыт 10+ ивентов"},
+  {id:"05", name:"Грузчик", d:"монтаж и демонтаж", need:"выносливость"},
+  {id:"06", name:"Аккредитация", d:"регистрация, QR, бейджи", need:"внимательность"},
+  {id:"07", name:"Водитель", d:"легковое авто, хэтчбек", need:"своё авто"},
+  {id:"09", name:"Рилс-мейкер", d:"съёмка и монтаж рилсов", need:"портфолио"},
+];
+const DAYS = ["Будни","Выходные","Вечер","Ночь","Командировки"];
+const STATUS = [["Анкета отправлена","мы её получили"],["Смотрим анкету","ответим в течение 2 дней"],["Приглашение на бриф","короткий созвон или встреча"],["Первая смена","добро пожаловать в команду"]];
+
+const S = { screen:"home", roles:[], exp:"До 5", days:["Выходные"], photos:[], status:0, num:"" };
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ico=id=>`<svg class="ico" viewBox="0 0 48 48"><use href="#i${id}"/></svg>`;
+const ui=n=>`<svg class="ui"><use href="#u-${n}"/></svg>`;
+const tg=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData!==undefined?Telegram.WebApp:null;
+const inTG=!!(tg&&tg.initData);
+if(tg){ try{ tg.ready(); tg.expand(); tg.setHeaderColor("#F3EFE6"); tg.setBackgroundColor("#F3EFE6"); }catch(e){} }
+const haptic=(t="light")=>{ try{ tg&&tg.HapticFeedback&&(t==="ok"?tg.HapticFeedback.notificationOccurred("success"):t==="err"?tg.HapticFeedback.notificationOccurred("error"):tg.HapticFeedback.impactOccurred(t)); }catch(e){} };
+function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.add("on"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("on"),1800); }
+
+const FLOW=["role","photo","about"], BACK={role:"home",photo:"role",about:"photo",mgr:"done"};
+function go(s,opt={}){
+  const prev=S.screen; S.screen=s;
+  const fi=FLOW.indexOf(s), pi=FLOW.indexOf(prev);
+  const dir=opt.back||(fi>=0&&pi>=0&&fi<pi)||BACK[prev]===s?"back":"";
+  $$(".screen").forEach(e=>{ const on=e.id==="s-"+s; e.classList.remove("on","back"); if(on){ void e.offsetWidth; e.classList.add("on"); if(dir) e.classList.add(dir); } });
+  ({home:rHome,role:rRole,photo:rPhoto,done:rDone,mgr:rMgr}[s]||(()=>{}))();
+  const i=FLOW.indexOf(s);
+  $$("[data-steps]").forEach(el=>el.innerHTML=["Роль","Фото","О себе"].map((n,k)=>`<button data-step="${k}" class="${k<i?"done":k===i?"cur":""}"><i></i><span>${n}</span></button>`).join(""));
+  rDock(); window.scrollTo(0,0);
+  if(tg&&tg.BackButton){ try{ BACK[s]?tg.BackButton.show():tg.BackButton.hide(); }catch(e){} }
+}
+function back(){ haptic(); if(BACK[S.screen]) go(BACK[S.screen],{back:true}); }
+if(tg&&tg.BackButton){ try{ tg.BackButton.onClick(back); }catch(e){} }
+function rDock(){
+  const s=S.screen, b=$("#mainBtn"); $("#main").classList.remove("hide"); b.className="";
+  const set=(l,r="",c="")=>{ $("#mainL").textContent=l; $("#mainR").textContent=r; b.className=c; };
+  if(s==="home") set("Заполнить анкету","3 мин");
+  else if(s==="role") set("Дальше: фото", S.roles.length?S.roles.length+" "+(S.roles.length===1?"роль":"роли"):"");
+  else if(s==="photo") set("Дальше: о себе", S.photos.filter(Boolean).length+" из 3");
+  else if(s==="about") set("Отправить анкету");
+  else if(s==="done") set("Готово","","k");
+  else $("#main").classList.add("hide");
+}
+$("#mainBtn").onclick=()=>{ haptic("medium"); const s=S.screen;
+  if(s==="home") go("role");
+  else if(s==="role"){ if(!S.roles.length){ $("#rolesErr").style.display="block"; haptic("err"); return toast("Выберите роль"); } go("photo"); }
+  else if(s==="photo"){ if(!S.photos[0]){ $("#photoErr").style.display="block"; haptic("err"); return toast("Добавьте фото лица"); } go("about"); }
+  else if(s==="about"){ if(!S.sending) send(); }
+  else if(s==="done"){ if(inTG) tg.close(); else go("home"); }
+};
+
+const roleCard=(r,pick)=>`<button class="role ${pick&&S.roles.includes(r.name)?"on":""}" ${pick?`data-role="${r.name}"`:`data-start="${r.name}"`}>${ico(r.id)}${pick?`<span class="ck">${S.roles.includes(r.name)?ui("check"):""}</span>`:""}<div><b>${r.name}</b><span>${r.d}</span></div><span class="tag" style="align-self:flex-start">${r.need}</span></button>`;
+function rHome(){ $("#rolesHome").innerHTML=ROLES.map(r=>roleCard(r,false)).join(""); }
+function rRole(){
+  $("#rolesPick").innerHTML=ROLES.map(r=>roleCard(r,true)).join("");
+  $("#days").innerHTML=DAYS.map(d=>`<button class="chip ${S.days.includes(d)?"on":""}" data-day="${d}">${S.days.includes(d)?ui("check"):""}${d}</button>`).join("");
+  $$("#exp button").forEach(b=>b.classList.toggle("on",b.dataset.exp===S.exp));
+}
+function rPhoto(){
+  $("#photos").innerHTML=[0,1,2].map(i=>`<label class="ph" style="${i===0&&!S.photos[0]?"border-color:var(--wine)":""}">${S.photos[i]?`<img src="${S.photos[i]}" alt=""><button class="rm" data-rm="${i}" aria-label="Удалить фото">${ui("x")}</button><span class="n">${["Лицо","В рост","Ещё"][i]}</span>`:`${ui("cam")}<span>${["Лицо","В полный рост","Ещё одно"][i]}</span>${i===0?'<span class="tag w" style="height:20px">обязательно</span>':""}`}<input type="file" accept="image/*" data-photo="${i}" aria-label="Загрузить фото"></label>`).join("");
+}
+function validAbout(){
+  let ok=true; const bad=(f,c)=>{ $(f).classList.toggle("err",c); if(c) ok=false; };
+  bad("#fName",!$("#jName").value.trim()); bad("#fContact",!$("#jContact").value.trim());
+  const age=+$("#jAge").value; const young=age&&age<CONFIG.MIN_AGE; $("#fAge").classList.toggle("err",young); $("#ageErr").style.display=young?"block":"none"; if(young) ok=false;
+  if(!ok){ haptic("err"); toast("Проверьте отмеченные поля"); } return ok;
+}
+function send(){
+  if(!validAbout()) return;
+  S.num=String(Math.floor(Math.random()*900)+100);
+  const data={num:S.num, roles:S.roles, exp:S.exp, days:S.days, name:$("#jName").value.trim(), age:$("#jAge").value, height:$("#jHeight").value, size:$("#jSize").value, metro:$("#jMetro").value.trim(), contact:$("#jContact").value.trim(), about:$("#jAbout").value.trim(), photos:S.photos.filter(Boolean).length};
+  S.data=data; S.sending=true; $("#mainL").textContent="Отправляем"; $("#mainBtn").classList.add("busy");
+  const fin=()=>{ S.sending=false; $("#mainBtn").classList.remove("busy"); haptic("ok"); go("done"); };
+  if(!inTG) return setTimeout(fin,700);
+  fetch(CONFIG.API_URL+"/join",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:tg.initData,data,photos:S.photos.filter(Boolean)})})
+    .then(r=>{ if(!r.ok) throw 0; fin(); }).catch(()=>{ S.sending=false; $("#mainBtn").classList.remove("busy"); haptic("err"); toast("Не удалось отправить – проверьте интернет"); rDock(); });
+}
+const tlHtml=st=>STATUS.map((x,i)=>`<div class="${i<st?"ok":i===st?"now":""}"><i>${i<st?"✓":i+1}</i><div><b>${x[0]}</b><span>${x[1]}</span></div></div>`).join("");
+function rDone(){ const d=S.data||{}; $("#bRole").textContent=(S.roles[0]||"Хелпер")+(S.roles.length>1?" +"+(S.roles.length-1):""); $("#bName").textContent=d.name||"Имя Фамилия"; $("#bNum").textContent="№ "+(S.num||"000");
+  $("#tl").innerHTML=tlHtml(S.status); const b=$("#badge"); b.classList.remove("drop"); $("#tl").classList.remove("rise"); void b.offsetWidth; b.classList.add("drop"); $("#tl").classList.add("rise"); }
+function rMgr(){ const d=S.data||{};
+  $("#mgrMsg").innerHTML=`<span class="bot">T&amp;R Events – команда</span>🙋 <b>Новая анкета № ${S.num}</b><br><br><b>${d.name||""}</b>${d.age?", "+d.age+" лет":""}${d.height?", "+d.height+" см":""}, размер ${d.size||"M"}<br>Роли: ${S.roles.join(", ")}<br>Опыт: ${S.exp} · ${S.days.join(", ")}<br>${d.metro?"Метро: "+d.metro+"<br>":""}Контакт: ${d.contact||""}${d.about?`<br>💬 ${d.about}`:""}<br>📷 Фото: ${d.photos||0}<br><br><span style="opacity:.7">Статус: ${STATUS[S.status][0]}</span>`;
+  $("#mgrBtns").innerHTML=`<button data-mgr="1">👀 Смотрим</button><button data-mgr="2">📞 Позвать на бриф</button><button data-mgr="3" class="full">✅ Вышел на смену</button>`; }
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-act]"); if(!t) return; const d=t.dataset;
+  if(d.act==="back") return back();
+  if(d.act==="share"){ haptic(); const url="https://t.me/share/url?url="+encodeURIComponent(CONFIG.BOT_SHARE)+"&text="+encodeURIComponent("T&R Events набирает команду на ивенты в Москве – анкета за 3 минуты"); return tg&&tg.openTelegramLink?tg.openTelegramLink(url):window.open(url,"_blank"); }
+  if(d.act==="mgr") return go("mgr");
+  if(d.start){ S.roles=[d.start]; haptic(); return go("role"); }
+  if(d.role){ const r=S.roles; r.includes(d.role)?r.splice(r.indexOf(d.role),1):r.push(d.role); $("#rolesErr").style.display="none"; haptic(); rRole(); return rDock(); }
+  if(d.day){ const r=S.days; r.includes(d.day)?r.splice(r.indexOf(d.day),1):r.push(d.day); haptic(); return rRole(); }
+  if(d.exp){ S.exp=d.exp; haptic(); return rRole(); }
+  if(d.rm!==undefined){ e.preventDefault(); S.photos[+d.rm]=null; haptic(); rPhoto(); return rDock(); }
+  if(d.step!==undefined){ const k=+d.step, cur=FLOW.indexOf(S.screen); if(k<cur) go(FLOW[k],{back:true}); return; }
+  if(d.mgr){ S.status=+d.mgr; haptic("ok"); toast("Кандидат видит: «"+STATUS[S.status][0]+"»"); return rMgr(); }
+});
+document.addEventListener("change",e=>{ const i=e.target.dataset&&e.target.dataset.photo; if(i===undefined||!e.target.files[0]) return; const r=new FileReader(); r.onload=()=>{ S.photos[+i]=r.result; $("#photoErr").style.display="none"; rPhoto(); rDock(); }; r.readAsDataURL(e.target.files[0]); });
+document.addEventListener("input",e=>{ const f=e.target.closest(".field"); if(f) f.classList.remove("err"); });
+
+/* демо-состояния для макетов: #role, #photo, #about, #done, #mgr */
+(function boot(){
+  const h=(location.hash||"").slice(1).split("&")[0];
+  const ph=(c)=>"data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'><rect width='30' height='40' fill='${c}'/><circle cx='15' cy='14' r='6' fill='#F3EFE6' opacity='.8'/><path d='M4 40c0-8 5-13 11-13s11 5 11 13' fill='#F3EFE6' opacity='.8'/></svg>`);
+  const fill=()=>{ S.roles=["Хелпер","Аккредитация"]; S.photos=[ph("#2A2A2E"),ph("#8A2B25")]; $("#jName").value="Мария Соколова"; $("#jAge").value="21"; $("#jHeight").value="168"; $("#jMetro").value="Таганская"; $("#jContact").value="@masha_s"; $("#jAbout").value="Медкнижка, английский B2"; };
+  const sent=()=>{ fill(); S.num="214"; S.data={name:"Мария Соколова",age:"21",height:"168",size:"M",metro:"Таганская",contact:"@masha_s",about:"Медкнижка, английский B2",photos:2}; };
+  switch(h){
+    case "role": S.roles=["Хелпер","Аккредитация"]; go("role"); break;
+    case "role-err": go("role"); $("#rolesErr").style.display="block"; break;
+    case "photo": fill(); go("photo"); break;
+    case "about": fill(); go("about"); break;
+    case "about-err": go("about"); $("#jAge").value="16"; validAbout(); break;
+    case "done": sent(); go("done"); break;
+    case "mgr": sent(); S.status=2; go("mgr"); break;
+    default: go("home");
+  }
+})();
+</script>
+</body>
+</html>
