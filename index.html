@@ -138,7 +138,13 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
 .how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
 .how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
 .trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
-.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.prod{ background:var(--ink); color:var(--paper); border-radius:var(--r); padding:16px }
+.prod .h3{ font:800 17px/1.2 Unbounded; text-transform:uppercase }
+.prod p{ font-size:13.5px; color:#C9C4BA; margin-top:6px }
+.prod .pl{ display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px }
+.prod .pl span{ border:1px solid #3A3A3E; border-radius:12px; padding:3px 10px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; color:#E9E4D8 }
+.prod .btn.l{ color:var(--paper) }
+.trust > div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
 .trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
 .mgr{ display:flex; align-items:center; gap:12px }
 .ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
@@ -339,6 +345,13 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
     <button class="act w" data-act="start"><svg class="ui"><use href="#u-calc"/></svg><div><b>Посчитать смету</b><span>персонал, площадка, продакшн</span></div></button>
     <button class="act s" data-act="orders"><svg class="ui" style="color:var(--wine)"><use href="#u-list"/></svg><div><b>Мои заявки</b><span>статусы и повтор заказа</span></div></button>
   </div>
+  <div class="lbl"><span class="mono">Продакшн-группа</span><span class="mono">опция</span></div>
+  <div class="prod">
+    <div class="h3">Свет, съёмка и рилсы</div>
+    <p>Своя продакшн-группа: световое оборудование, фото и видео с площадки, рилсы и after-movie день в день. Считаем под задачу.</p>
+    <div class="pl"><span>Свет</span><span>Фото</span><span>Видео</span><span>Рилсы</span><span>Монтаж</span></div>
+    <div class="grid2"><button class="btn w" data-act="prod">Добавить в смету</button><button class="btn l" data-act="works">Наши работы</button></div>
+  </div>
   <div class="lbl"><span class="mono">Быстрый старт</span><span class="mono">шаблоны</span></div>
   <div class="chips" id="quick"></div>
   <div class="lbl"><span class="mono">Как это работает</span></div>
@@ -483,6 +496,7 @@ const CONFIG = {
   MIN_HOURS: null,       // минимальная смена, ч (null – не согласовано, ограничения нет)
   NIGHT: null,           // ночная наценка: {from:23, to:7, rate:0.2} (null – нет)
   MANAGER: "tr_events",  // Telegram менеджера для кнопки «Написать»
+  PROD_URL: "https://ammiac.tilda.ws/",  // сайт с работами продакшн-группы
 };
 
 // price – ₽ за 1 час одного специалиста; null – договорная цена
@@ -494,8 +508,8 @@ const SVC = [
   {id:"05", g:"Площадка", name:"Хелперы-грузчики", short:"погрузка, монтаж, расстановка", price:750, staff:true, inc:["Погрузка","Монтаж и демонтаж","Расстановка мебели","Ночные смены"]},
   {id:"06", g:"Площадка", name:"Операторы аккредитации", short:"регистрация, QR, бейджи", price:700, staff:true, inc:["Списки и QR-коды","Печать бейджей","Контроль доступа","Отчёт по явке"]},
   {id:"07", g:"Площадка", name:"Водитель на легковом авто", short:"хэтчбек: команда, мерч, реквизит", price:null, inc:["Трансфер команды","Мерч и материалы","Ранние выезды"]},
-  {id:"08", g:"Продакшн", name:"Свет и съёмка", short:"свет, фото, видео", price:null, opt:true, inc:["Свет","Фото и видео","Своя техника"]},
-  {id:"09", g:"Продакшн", name:"Монтажёр, рилс-мейкер", short:"рилсы день в день", price:null, opt:true, inc:["Рилсы","After-movie","Сторис"]},
+  {id:"08", g:"Продакшн", name:"Свет и съёмка", short:"продакшн-группа: свет, фото, видео", price:null, opt:true, inc:["Световое оборудование","Фотограф","Видеооператор","Своя техника","Обработка и выдача"]},
+  {id:"09", g:"Продакшн", name:"Монтажёр, рилс-мейкер", short:"рилсы и видео день в день", price:null, opt:true, inc:["Рилсы","After-movie","Сторис","Монтаж в день ивента"]},
   {id:"10", g:"Продакшн", name:"Ивент-задачи", short:"площадка, смета, сценарий", price:null, inc:["Подбор площадки","Смета","Концепция","Сценарий"]},
 ];
 
@@ -776,6 +790,8 @@ document.addEventListener("click",e=>{
     const a=d.act; haptic();
     if(a==="back") back();
     else if(a==="start") go(teamSize()?"estimate":"event");
+    else if(a==="prod"){ catTab="Продакшн"; openCatalog(); }
+    else if(a==="works"){ tg&&tg.openLink?tg.openLink(CONFIG.PROD_URL):window.open(CONFIG.PROD_URL,"_blank"); }
     else if(a==="write"){ const url="https://t.me/"+CONFIG.MANAGER; tg&&tg.openTelegramLink?tg.openTelegramLink(url):window.open(url,"_blank"); }
     else if(a==="catalog") openCatalog();
     else if(a==="close") closeSheet();

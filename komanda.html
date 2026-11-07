@@ -138,7 +138,13 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
 .how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
 .how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
 .trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
-.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.prod{ background:var(--ink); color:var(--paper); border-radius:var(--r); padding:16px }
+.prod .h3{ font:800 17px/1.2 Unbounded; text-transform:uppercase }
+.prod p{ font-size:13.5px; color:#C9C4BA; margin-top:6px }
+.prod .pl{ display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px }
+.prod .pl span{ border:1px solid #3A3A3E; border-radius:12px; padding:3px 10px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; color:#E9E4D8 }
+.prod .btn.l{ color:var(--paper) }
+.trust > div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
 .trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
 .mgr{ display:flex; align-items:center; gap:12px }
 .ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
@@ -376,7 +382,7 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
     <div><svg class="ui" style="color:var(--wine)"><use href="#u-team"/></svg><b>Старший рядом</b><span>супервайзер на площадке</span></div>
     <div><svg class="ui" style="color:var(--wine)"><use href="#u-repeat"/></svg><b>Гибкий график</b><span>берёте только удобные даты</span></div>
   </div>
-  <div class="lbl"><span class="mono">Кого ищем</span><span class="mono">8 ролей</span></div>
+  <div class="lbl"><span class="mono">Кого ищем</span><span class="mono" id="rolesCnt"></span></div>
   <div class="roles" id="rolesHome"></div>
   <div class="lbl"><span class="mono">Как попасть в команду</span></div>
   <div class="how" style="grid-template-columns:repeat(3,1fr)"><div><b>01</b><span>Анкета и фото</span></div><div><b>02</b><span>Короткий созвон</span></div><div><b>03</b><span>Бриф и первая смена</span></div></div>
@@ -433,6 +439,7 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
   </div>
   <label class="field" id="fContact" style="margin-bottom:6px"><span class="k">Telegram или телефон</span><input id="jContact" autocapitalize="none" autocorrect="off" enterkeyhint="next"></label>
   <div class="errtxt">Нужен контакт, чтобы позвать вас на проект</div>
+  <label class="field" id="fPort" style="margin-bottom:6px;display:none"><span class="k">Портфолио – ссылка</span><input id="jPort" type="url" inputmode="url" autocapitalize="none" autocorrect="off" placeholder="диск, YouTube, Instagram, Behance" enterkeyhint="next"></label>
   <label class="field"><span class="k">О себе</span><textarea id="jAbout" rows="2" placeholder="опыт, языки, медкнижка, авто"></textarea></label>
 </section>
 
@@ -469,7 +476,8 @@ const ROLES = [
   {id:"05", name:"Грузчик", d:"монтаж и демонтаж", need:"выносливость"},
   {id:"06", name:"Аккредитация", d:"регистрация, QR, бейджи", need:"внимательность"},
   {id:"07", name:"Водитель", d:"легковое авто, хэтчбек", need:"своё авто"},
-  {id:"09", name:"Рилс-мейкер", d:"съёмка и монтаж рилсов", need:"портфолио"},
+  {id:"08", name:"Свет и съёмка", d:"фото, видео, световое оборудование", need:"портфолио", prod:true},
+  {id:"09", name:"Монтажёр, рилс", d:"рилсы и видео день в день", need:"портфолио", prod:true},
 ];
 const DAYS = ["Будни","Выходные","Вечер","Ночь","Командировки"];
 const STATUS = [["Анкета отправлена","мы её получили"],["Смотрим анкету","ответим в течение 2 дней"],["Приглашение на бриф","короткий созвон или встреча"],["Первая смена","добро пожаловать в команду"]];
@@ -485,6 +493,7 @@ const haptic=(t="light")=>{ try{ tg&&tg.HapticFeedback&&(t==="ok"?tg.HapticFeedb
 function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.add("on"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("on"),1800); }
 
 const FLOW=["role","photo","about"], BACK={role:"home",photo:"role",about:"photo",mgr:"done"};
+const needPort=()=>S.roles.some(n=>(ROLES.find(r=>r.name===n)||{}).prod);
 function go(s,opt={}){
   const prev=S.screen; S.screen=s;
   const fi=FLOW.indexOf(s), pi=FLOW.indexOf(prev);
@@ -493,6 +502,7 @@ function go(s,opt={}){
   ({home:rHome,role:rRole,photo:rPhoto,done:rDone,mgr:rMgr}[s]||(()=>{}))();
   const i=FLOW.indexOf(s);
   $$("[data-steps]").forEach(el=>el.innerHTML=["Роль","Фото","О себе"].map((n,k)=>`<button data-step="${k}" class="${k<i?"done":k===i?"cur":""}"><i></i><span>${n}</span></button>`).join(""));
+  $("#fPort").style.display=needPort()?"":"none";
   rDock(); window.scrollTo(0,0);
   if(tg&&tg.BackButton){ try{ BACK[s]?tg.BackButton.show():tg.BackButton.hide(); }catch(e){} }
 }
@@ -517,7 +527,7 @@ $("#mainBtn").onclick=()=>{ haptic("medium"); const s=S.screen;
 };
 
 const roleCard=(r,pick)=>`<button class="role ${pick&&S.roles.includes(r.name)?"on":""}" ${pick?`data-role="${r.name}"`:`data-start="${r.name}"`}>${ico(r.id)}${pick?`<span class="ck">${S.roles.includes(r.name)?ui("check"):""}</span>`:""}<div><b>${r.name}</b><span>${r.d}</span></div><span class="tag" style="align-self:flex-start">${r.need}</span></button>`;
-function rHome(){ $("#rolesHome").innerHTML=ROLES.map(r=>roleCard(r,false)).join(""); }
+function rHome(){ $("#rolesCnt").textContent=ROLES.length+" ролей"; $("#rolesHome").innerHTML=ROLES.map(r=>roleCard(r,false)).join(""); }
 function rRole(){
   $("#rolesPick").innerHTML=ROLES.map(r=>roleCard(r,true)).join("");
   $("#days").innerHTML=DAYS.map(d=>`<button class="chip ${S.days.includes(d)?"on":""}" data-day="${d}">${S.days.includes(d)?ui("check"):""}${d}</button>`).join("");
@@ -535,7 +545,7 @@ function validAbout(){
 function send(){
   if(!validAbout()) return;
   S.num=String(Math.floor(Math.random()*900)+100);
-  const data={num:S.num, roles:S.roles, exp:S.exp, days:S.days, name:$("#jName").value.trim(), age:$("#jAge").value, height:$("#jHeight").value, size:$("#jSize").value, metro:$("#jMetro").value.trim(), contact:$("#jContact").value.trim(), about:$("#jAbout").value.trim(), photos:S.photos.filter(Boolean).length};
+  const data={num:S.num, roles:S.roles, exp:S.exp, days:S.days, name:$("#jName").value.trim(), age:$("#jAge").value, height:$("#jHeight").value, size:$("#jSize").value, metro:$("#jMetro").value.trim(), contact:$("#jContact").value.trim(), portfolio:($("#jPort").value||"").trim(), about:$("#jAbout").value.trim(), photos:S.photos.filter(Boolean).length};
   S.data=data; S.sending=true; $("#mainL").textContent="Отправляем"; $("#mainBtn").classList.add("busy");
   const fin=()=>{ S.sending=false; $("#mainBtn").classList.remove("busy"); haptic("ok"); go("done"); };
   if(!inTG) return setTimeout(fin,700);
@@ -546,7 +556,7 @@ const tlHtml=st=>STATUS.map((x,i)=>`<div class="${i<st?"ok":i===st?"now":""}"><i
 function rDone(){ const d=S.data||{}; $("#bRole").textContent=(S.roles[0]||"Хелпер")+(S.roles.length>1?" +"+(S.roles.length-1):""); $("#bName").textContent=d.name||"Имя Фамилия"; $("#bNum").textContent="№ "+(S.num||"000");
   $("#tl").innerHTML=tlHtml(S.status); const b=$("#badge"); b.classList.remove("drop"); $("#tl").classList.remove("rise"); void b.offsetWidth; b.classList.add("drop"); $("#tl").classList.add("rise"); }
 function rMgr(){ const d=S.data||{};
-  $("#mgrMsg").innerHTML=`<span class="bot">T&amp;R Events – команда</span>🙋 <b>Новая анкета № ${S.num}</b><br><br><b>${d.name||""}</b>${d.age?", "+d.age+" лет":""}${d.height?", "+d.height+" см":""}, размер ${d.size||"M"}<br>Роли: ${S.roles.join(", ")}<br>Опыт: ${S.exp} · ${S.days.join(", ")}<br>${d.metro?"Метро: "+d.metro+"<br>":""}Контакт: ${d.contact||""}${d.about?`<br>💬 ${d.about}`:""}<br>📷 Фото: ${d.photos||0}<br><br><span style="opacity:.7">Статус: ${STATUS[S.status][0]}</span>`;
+  $("#mgrMsg").innerHTML=`<span class="bot">T&amp;R Events – команда</span>🙋 <b>Новая анкета № ${S.num}</b><br><br><b>${d.name||""}</b>${d.age?", "+d.age+" лет":""}${d.height?", "+d.height+" см":""}, размер ${d.size||"M"}<br>Роли: ${S.roles.join(", ")}<br>Опыт: ${S.exp} · ${S.days.join(", ")}<br>${d.metro?"Метро: "+d.metro+"<br>":""}Контакт: ${d.contact||""}${d.portfolio?`<br>🎬 Портфолио: ${d.portfolio}`:""}${d.about?`<br>💬 ${d.about}`:""}<br>📷 Фото: ${d.photos||0}<br><br><span style="opacity:.7">Статус: ${STATUS[S.status][0]}</span>`;
   $("#mgrBtns").innerHTML=`<button data-mgr="1">👀 Смотрим</button><button data-mgr="2">📞 Позвать на бриф</button><button data-mgr="3" class="full">✅ Вышел на смену</button>`; }
 
 document.addEventListener("click",e=>{

@@ -138,7 +138,13 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
 .how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
 .how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
 .trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
-.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.prod{ background:var(--ink); color:var(--paper); border-radius:var(--r); padding:16px }
+.prod .h3{ font:800 17px/1.2 Unbounded; text-transform:uppercase }
+.prod p{ font-size:13.5px; color:#C9C4BA; margin-top:6px }
+.prod .pl{ display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px }
+.prod .pl span{ border:1px solid #3A3A3E; border-radius:12px; padding:3px 10px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; color:#E9E4D8 }
+.prod .btn.l{ color:var(--paper) }
+.trust > div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
 .trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
 .mgr{ display:flex; align-items:center; gap:12px }
 .ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
@@ -499,10 +505,10 @@ h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01e
    ============================================================ */
 const CONFIG = { API_URL:"https://ЛОГИН.pythonanywhere.com", CONFIRM_HOURS:24, ME:{name:"Мария Соколова", role:"Хелпер"} };
 // ставки исполнителям: ставка для заказчика минус 200 ₽/ч; остальные роли – договорная (null)
-const PAY = { "Хелпер":500, "Промо":500, "Промо-модель":800, "Аккредитация":500, "Хелпер-грузчик":550, "Супервайзер":600, "Водитель":null };
+const PAY = { "Хелпер":500, "Промо":500, "Промо-модель":800, "Аккредитация":500, "Хелпер-грузчик":550, "Супервайзер":600, "Водитель":null, "Свет и съёмка":null, "Монтажёр, рилс":null };
 const payH=r=>PAY[r]?PAY[r]+" ₽/ч":"договорная";
 const payShift=(r,e)=>PAY[r]?(PAY[r]*hrs(e)).toLocaleString("ru")+" ₽":"договорная";
-const ICO = { "Хелпер":"01", "Промо":"02", "Промо-модель":"03", "Супервайзер":"04", "Хелпер-грузчик":"05", "Аккредитация":"06", "Водитель":"07" };
+const ICO = { "Хелпер":"01", "Промо":"02", "Промо-модель":"03", "Супервайзер":"04", "Хелпер-грузчик":"05", "Аккредитация":"06", "Водитель":"07", "Свет и съёмка":"08", "Монтажёр, рилс":"09" };
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const ico=r=>`<svg class="ico" viewBox="0 0 48 48"><use href="#i${ICO[r]||"01"}"/></svg>`;
 const ui=n=>`<svg class="ui"><use href="#u-${n}"/></svg>`;
@@ -518,14 +524,14 @@ const EVENTS = [
   {id:"e2", n:1, name:"Выставка «Город будущего»", place:"Экспоцентр, павильон 2", metro:"Выставочная", time:"09:00–19:00", meet:"08:15", dress:"Total black",
    slots:{"Хелпер":[3,4],"Промо":[3,4],"Промо-модель":[1,2]}, plan:[["08:15","Сбор у входа 3, бриф"],["09:00","Открытие, раздача материалов"],["14:00","Обед по сменам, 30 мин"],["19:00","Демонтаж стенда"]]},
   {id:"e3", n:5, name:"Форум «Digital-день»", place:"Технопарк", metro:"трансфер от м. Славянский бульвар", time:"08:00–18:00", meet:"07:15", dress:"Total black, удобная обувь",
-   slots:{"Аккредитация":[3,6],"Хелпер":[5,10],"Хелпер-грузчик":[1,4],"Супервайзер":[1,1],"Водитель":[0,1]}, plan:[["07:15","Трансфер от метро"],["08:00","Регистрация, выдача бейджей"],["10:00","Залы, микрофоны, навигация"],["18:00","Демонтаж"]]},
+   slots:{"Аккредитация":[3,6],"Хелпер":[5,10],"Хелпер-грузчик":[1,4],"Супервайзер":[1,1],"Водитель":[0,1],"Свет и съёмка":[1,2],"Монтажёр, рилс":[0,1]}, plan:[["07:15","Трансфер от метро"],["08:00","Регистрация, выдача бейджей"],["10:00","Залы, микрофоны, навигация"],["18:00","Демонтаж"]]},
   {id:"e4", n:8, name:"Промо-акция в ТЦ", place:"ТЦ «Афимолл»", metro:"Деловой центр", time:"12:00–20:00", meet:"11:30", dress:"Форма клиента – выдадут на месте",
    slots:{"Промо":[4,4]}, plan:[["11:30","Сбор, получение формы"],["12:00","Сэмплинг у входов"],["20:00","Сдача остатков"]]},
 ];
 // ответы исполнителя: st go|maybe|no|wait, role, conf (подтвердил за день), check here|late
 const S = { screen:"feed", ev:null, pick:null, filter:"Все", mgrEv:"e2", mode:"set", list:"go", late:null,
   resp:{ e1:{st:"go",role:"Хелпер",conf:true}, e2:{st:"go",role:"Хелпер",conf:false} },
-  need:{"Хелпер":4,"Промо":2,"Аккредитация":0,"Хелпер-грузчик":0,"Промо-модель":0,"Супервайзер":1,"Водитель":0}, dl:"24 часов" };
+  need:{"Хелпер":4,"Промо":2,"Аккредитация":0,"Хелпер-грузчик":0,"Промо-модель":0,"Супервайзер":1,"Водитель":0,"Свет и съёмка":0,"Монтажёр, рилс":0}, dl:"24 часов" };
 
 // команда для экрана менеджера (демо)
 const NAMES=["Мария Соколова","Иван Петров","Алина Ким","Дмитрий Орлов","Софья Белова","Артур Хасанов","Ксения Лебедева","Никита Громов","Полина Зайцева","Егор Миронов","Вика Руденко","Тимур Абдуллаев","Даша Ершова","Глеб Сидоров","Лена Фролова","Максим Юдин"];
