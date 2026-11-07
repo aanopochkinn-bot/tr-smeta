@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3EFE6">
+<title>T&amp;R – смена</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+/* ===== Фирменные цвета T&R, гамма Wine ===== */
+:root{
+  --ink:#0E0E10; --paper:#F3EFE6; --wine:#8A2B25; --wl:#B5463B; --wine-50:#F5E4E1;
+  --stone:#D6D0C4; --sand:#E9E4D8; --card:#FAF7F1; --line:#E0D9CC; --mute:#66625A; --graphite:#2A2A2E;
+  --r:18px; --tap:44px; --tabs:64px; --mainh:56px;
+  --ease-out:cubic-bezier(.23,1,.32,1); --ease-drawer:cubic-bezier(.32,.72,0,1); --ease-io:cubic-bezier(.77,0,.175,1);
+}
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
+html,body{ background:var(--paper); color:var(--ink); font:500 15px/1.42 Manrope,system-ui,sans-serif; overscroll-behavior:none; -webkit-text-size-adjust:100% }
+body{ max-width:440px; margin:0 auto; min-height:100vh; min-height:100dvh; position:relative; overflow-x:hidden }
+button,input,textarea,select{ font:inherit; color:inherit }
+button{ background:none; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; transition:transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms, border-color 160ms, opacity 160ms }
+button:active{ transform:scale(.97) }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{ outline:2px solid var(--wine); outline-offset:2px }
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{ outline:none }
+.mono{ font:500 11.5px/1.3 "JetBrains Mono",monospace; letter-spacing:.12em; text-transform:uppercase }
+.amp{ font-family:"Instrument Serif",serif; font-style:italic; font-weight:400; color:var(--wine); text-transform:none; letter-spacing:0 }
+h1{ font:900 28px/1 Unbounded; text-transform:uppercase; letter-spacing:-.02em }
+h1 .amp{ font-size:1.3em; line-height:.7 }
+h2{ font:800 17px/1.15 Unbounded; text-transform:uppercase; letter-spacing:-.01em }
+.h3{ font:800 15px/1.25 Manrope; display:block }
+.sub{ color:var(--graphite); margin-top:8px }
+.muted{ color:var(--mute) }
+.lbl{ display:flex; justify-content:space-between; align-items:center; color:var(--mute); margin:22px 0 10px }
+.ico{ width:26px; height:26px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none }
+.ico .a{ stroke:var(--wine) } .ico .f{ fill:var(--wine); stroke:none }
+.ui{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+
+/* ===== каркас ===== */
+.screen{ display:none; padding:0 16px; padding-bottom:calc(var(--mainh) + var(--tabs) + 40px); min-height:100vh }
+.screen.on{ display:block; animation:fwd 260ms var(--ease-out) }
+.screen.on.back{ animation-name:bwd }
+.screen.on.fade{ animation-name:fade }
+.screen.flow{ padding-bottom:calc(var(--mainh) + 110px) }
+@keyframes fwd{ from{ opacity:0; transform:translateX(16px) } to{ opacity:1; transform:none } }
+@keyframes bwd{ from{ opacity:0; transform:translateX(-16px) } to{ opacity:1; transform:none } }
+@keyframes fade{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes bump{ 0%{ transform:scale(1) } 40%{ transform:scale(1.06) } 100%{ transform:scale(1) } }
+@keyframes tick{ from{ opacity:.2; transform:translateY(5px) } to{ opacity:1; transform:none } }
+@keyframes pop{ from{ opacity:0; transform:scale(.9) } to{ opacity:1; transform:none } }
+@keyframes drop{ 0%{ opacity:0; transform:translateY(-34px) rotate(-9deg) scale(.96) } 70%{ opacity:1; transform:translateY(3px) rotate(-1.8deg) } 100%{ transform:rotate(-2.5deg) } }
+@keyframes rise{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+@keyframes shake{ 0%,100%{ transform:none } 25%{ transform:translateX(-4px) } 75%{ transform:translateX(4px) } }
+.bump{ animation:bump 280ms var(--ease-out) }
+.tick{ animation:tick 180ms var(--ease-out) }
+.ticket.drop{ animation:drop 700ms var(--ease-out) both }
+.tl.rise > div{ animation:rise 360ms var(--ease-out) both }
+.tl.rise > div:nth-child(2){ animation-delay:80ms } .tl.rise > div:nth-child(3){ animation-delay:160ms } .tl.rise > div:nth-child(4){ animation-delay:240ms }
+.field.err{ animation:shake 260ms var(--ease-out) }
+.cat .ck svg, .chip svg{ animation:pop 200ms var(--ease-out) }
+.steps i{ position:relative; overflow:hidden }
+.steps i:after{ content:""; position:absolute; inset:0; background:var(--ink); transform:scaleX(0); transform-origin:left; transition:transform 360ms var(--ease-out) }
+.steps .done i:after{ transform:scaleX(1) } .steps .cur i:after{ transform:scaleX(1); background:var(--wine) }
+@media (prefers-reduced-motion: reduce){
+  .screen.on,.screen.on.back{ animation-name:fade; animation-duration:160ms }
+  .sheet{ transition:opacity 200ms; } .sheet:not(.on){ opacity:0 }
+  .ticket.drop,.tl.rise > div,.bump,.tick,.field.err{ animation:fade 200ms both }
+  button:active{ transform:none }
+}
+.top{ position:sticky; top:0; z-index:5; background:var(--paper); margin:0 -16px; padding:10px 16px 10px; display:flex; align-items:center; gap:10px }
+.top .t{ flex:1; min-width:0 }
+.top .mark{ height:22px; display:block }
+.iconbtn{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; flex:none }
+.pill{ height:36px; padding:0 14px; border-radius:20px; background:var(--ink); color:var(--paper); font:700 13px Manrope; display:inline-flex; align-items:center; gap:8px }
+.badge{ min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--wine); color:var(--paper); font:800 11px/20px Manrope; text-align:center; display:inline-block }
+
+/* шаги */
+.steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 18px }
+.steps button{ text-align:left; padding:0 }
+.steps i{ display:block; height:4px; border-radius:2px; background:var(--stone) }
+.steps span{ display:block; margin-top:6px; font:700 11px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase; color:var(--mute) }
+.steps .done span{ color:var(--ink) }
+.steps .cur span{ color:var(--wine) }
+
+/* карточки и поля */
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px }
+.dark{ background:var(--ink); color:var(--paper); border:0 }
+.dark .muted{ color:#9C978D } .dark .amp{ color:var(--wl) }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.field{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:9px 14px 10px; display:block; position:relative }
+.field:focus-within{ border-color:var(--ink) }
+.field.err{ border-color:var(--wine); background:var(--wine-50) }
+.field .k{ display:block; color:var(--mute); font:500 11px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase }
+.field input,.field textarea,.field select{ width:100%; border:0; background:none; outline:none; font:700 16px Manrope; margin-top:2px; resize:none; appearance:none; -webkit-appearance:none; min-height:26px }
+.field .hint{ position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mute); font-size:13px }
+.errtxt{ color:var(--wine); font-size:12px; margin:4px 4px 0; display:none }
+.field.err + .errtxt{ display:block }
+.chips{ display:flex; flex-wrap:wrap; gap:8px }
+.chip{ min-height:40px; padding:0 15px; border-radius:20px; border:1.5px solid var(--line); background:var(--card); font:700 14px Manrope; display:inline-flex; align-items:center; gap:7px }
+.chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink) }
+.chip .ico{ width:20px; height:20px }
+.chip.on .ico{ stroke:var(--paper) } .chip.on .ico .a{ stroke:var(--wl) }
+.seg{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--sand); border-radius:14px; padding:4px }
+.seg button{ min-height:40px; border-radius:11px; font:700 14px Manrope; color:var(--graphite) }
+.seg button.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(14,14,16,.12) }
+
+/* степпер */
+.stepper{ display:flex; align-items:center; gap:4px }
+.stepper button{ width:var(--tap); height:var(--tap); border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.stepper button.pl{ background:var(--ink); color:var(--paper) }
+.stepper button:disabled{ opacity:.35 }
+.stepper output{ min-width:44px; text-align:center; font:900 20px Unbounded }
+.row{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:var(--tap) }
+.range{ width:100%; accent-color:var(--wine); height:28px }
+
+/* плашки */
+.note{ display:flex; gap:10px; align-items:flex-start; background:var(--sand); border-radius:16px; padding:12px 14px; font-size:13px; line-height:1.4 }
+.note .ui{ width:18px; height:18px; color:var(--wine); margin-top:1px }
+.note.wine{ background:var(--wine-50) }
+.tag{ display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:12px; font:700 11px "JetBrains Mono"; letter-spacing:.06em; text-transform:uppercase; background:var(--sand); color:var(--graphite) }
+.tag.w{ background:var(--wine); color:var(--paper) } .tag.o{ background:none; border:1px solid var(--wine); color:var(--wine) }
+.tag.g{ background:#E3EDE4; color:#2F5B36 }
+
+/* главная */
+.hero{ background:var(--ink); color:var(--paper); border-radius:24px; padding:20px; position:relative; overflow:hidden; margin-top:4px }
+.hero .big{ position:absolute; right:-20px; top:-56px; font:italic 400 220px/1 "Instrument Serif"; color:var(--wl); opacity:.22; pointer-events:none }
+.hero .logo{ height:30px; position:relative; display:block }
+.hero h1{ margin-top:26px; position:relative; font-size:27px } .hero h1 .amp{ color:var(--wl) }
+.hero p{ color:#C9C4BA; margin-top:10px; position:relative; font-size:14px }
+.acts{ display:grid; grid-template-columns:1.25fr 1fr; gap:8px; margin-top:8px }
+.act{ border-radius:20px; padding:16px; text-align:left; min-height:120px; display:flex; flex-direction:column; justify-content:space-between }
+.act b{ font:800 16px/1.2 Unbounded; text-transform:uppercase; display:block; margin-top:14px }
+.act span{ font-size:12.5px; opacity:.85; margin-top:4px; display:block }
+.act.w{ background:var(--wine); color:var(--paper) } .act.s{ background:var(--sand) }
+.how{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px }
+.how div{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 8px }
+.how b{ display:block; font:900 16px Unbounded; color:var(--wine) }
+.how span{ display:block; font-size:11.5px; line-height:1.25; margin-top:4px; color:var(--graphite) }
+.trust{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.trust div{ display:flex; gap:10px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px }
+.trust b{ display:block; font-size:13.5px } .trust span{ font-size:12px; color:var(--mute) }
+.mgr{ display:flex; align-items:center; gap:12px }
+.ava{ width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font:900 15px Unbounded; flex:none }
+
+/* шаг 1 */
+.fmt{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.fmt button{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; font:700 12.5px Manrope; min-height:86px; justify-content:center }
+.fmt button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.fmt .ico{ width:28px; height:28px }
+.guests{ display:flex; align-items:baseline; gap:8px }
+.guests b{ font:900 34px/1 Unbounded } .guests span{ color:var(--mute) }
+.until{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px }
+
+/* шаг 2 */
+.rec{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px; position:relative; overflow:hidden }
+.rec .big{ position:absolute; right:-14px; bottom:-70px; font:italic 400 180px/1 "Instrument Serif"; color:var(--wl); opacity:.18 }
+.rec ul{ list-style:none; margin-top:12px; position:relative }
+.rec li{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #2A2A2E; font-size:14px }
+.rec li em{ font-style:normal; color:#9C978D; font-size:12.5px; white-space:nowrap }
+.rec .why{ font-size:12.5px; color:#C9C4BA; margin-top:10px; position:relative }
+.rec .btns{ display:flex; gap:8px; margin-top:14px; position:relative }
+.btn{ min-height:var(--tap); border-radius:14px; padding:0 16px; font:800 14px Manrope; display:inline-flex; align-items:center; justify-content:center; gap:8px }
+.btn.w{ background:var(--wine); color:var(--paper) } .btn.k{ background:var(--ink); color:var(--paper) }
+.btn.s{ background:var(--sand) } .btn.l{ background:transparent; color:inherit; border:1.5px solid currentColor }
+.btn.full{ width:100% }
+.team .item{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; margin-bottom:8px; text-align:left; width:100% }
+.ib{ width:44px; height:44px; border-radius:14px; background:var(--sand); display:flex; align-items:center; justify-content:center }
+.item b{ display:block; font:800 14.5px/1.2 Manrope }
+.item small{ display:block; color:var(--mute); font:500 11.5px/1.35 "JetBrains Mono"; margin-top:3px }
+.item .s{ text-align:right; font:800 14px Unbounded; white-space:nowrap }
+.item .s em{ display:block; font:700 11px Manrope; font-style:normal; color:var(--wine); margin-top:3px }
+.add{ width:100%; min-height:56px; border-radius:var(--r); border:1.5px dashed var(--stone); display:flex; align-items:center; justify-content:center; gap:8px; font:800 14px Manrope; color:var(--graphite) }
+.empty{ text-align:center; padding:26px 10px; color:var(--mute) }
+.empty .amp{ font-size:80px; line-height:1; display:block }
+
+/* шторка */
+.veil{ position:fixed; inset:0; background:rgba(14,14,16,.42); z-index:20; opacity:0; pointer-events:none; transition:opacity 300ms var(--ease-out) }
+.veil.on{ opacity:1; pointer-events:auto }
+.sheet{ position:fixed; left:50%; bottom:0; transform:translate(-50%,105%); width:100%; max-width:440px; max-height:88vh; background:var(--paper); border-radius:26px 26px 0 0; z-index:21; transition:transform 420ms var(--ease-drawer); display:flex; flex-direction:column; will-change:transform }
+.sheet.closing{ transition-duration:240ms }
+.sheet.drag{ transition:none }
+.sheet .grab{ touch-action:none; cursor:grab; padding-top:2px }
+.sheet.on{ transform:translate(-50%,0) }
+.sheet .grip{ width:40px; height:5px; border-radius:3px; background:var(--stone); margin:8px auto 0 }
+.sheet .sh{ display:flex; align-items:center; gap:12px; padding:12px 16px 8px }
+.sheet .sb{ overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 16px; -webkit-overflow-scrolling:touch }
+.sheet .sf{ padding:10px 16px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--paper) }
+.cat{ display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); width:100%; text-align:left }
+.cat b{ display:block; font:800 14.5px Manrope } .cat small{ color:var(--mute); font-size:12px }
+.cat .p{ text-align:right; font:800 13px Unbounded; white-space:nowrap }
+.cat .p span{ display:block; font:500 11px "JetBrains Mono"; color:var(--mute); margin-top:2px; letter-spacing:.05em }
+.cat .ck{ width:28px; height:28px; border-radius:50%; border:1.5px solid var(--stone); display:flex; align-items:center; justify-content:center; margin:6px 0 0 auto }
+.cat.in .ck{ background:var(--wine); border-color:var(--wine); color:var(--paper) }
+.shift{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:8px }
+.shift .head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px }
+.shift .row + .row{ border-top:1px solid var(--line) }
+.incl{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
+.incl span{ background:var(--sand); border-radius:12px; padding:5px 10px; font:600 12px Manrope }
+
+/* шаг 3 */
+.est .ln{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); align-items:start }
+.est .ln .ico{ width:24px; height:24px; margin-top:1px }
+.est .ln b{ font:800 14px Manrope } .est .ln small{ display:block; color:var(--mute); font:500 11px/1.5 "JetBrains Mono" }
+.est .ln .s{ font:800 14px Unbounded; white-space:nowrap; text-align:right }
+.tot{ background:var(--ink); color:var(--paper); border-radius:22px; padding:16px 18px; margin-top:14px }
+.tot .l{ display:flex; justify-content:space-between; font-size:13px; color:#C9C4BA; padding:3px 0 }
+.tot .l.w{ color:#F0C9C3 }
+.tot .big{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid #2A2A2E; margin-top:10px; padding-top:12px }
+.tot .big b{ font:900 30px Unbounded; display:inline-block } .tot .big span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.1em; color:#9C978D; text-transform:uppercase }
+.sw{ width:50px; height:30px; border-radius:15px; background:var(--stone); position:relative; flex:none; transition:.2s }
+.sw:after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.2s; box-shadow:0 1px 2px rgba(0,0,0,.2) }
+.sw.on{ background:var(--wine) } .sw.on:after{ left:23px }
+
+/* шаг 4 */
+.dress{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.dress button{ text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px; min-height:76px }
+.dress button b{ display:block; font:800 14px Manrope } .dress button span{ font-size:12px; color:var(--mute) }
+.dress button.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.sw-dot{ width:18px; height:18px; border-radius:50%; display:inline-block; margin-bottom:6px; border:1.5px solid var(--line) }
+
+/* готово */
+.ticket{ margin:22px 4px 0; background:var(--wine); color:var(--paper); border-radius:22px; display:flex; position:relative; transform:rotate(-2.5deg); box-shadow:0 14px 30px rgba(14,14,16,.16) }
+.ticket:before,.ticket:after{ content:""; position:absolute; right:78px; width:22px; height:22px; border-radius:50%; background:var(--paper) }
+.ticket:before{ top:-11px } .ticket:after{ bottom:-11px }
+.ticket .l{ flex:1; padding:20px; border-right:2px dashed rgba(243,239,230,.55) }
+
+.ticket .l b{ display:block; font:900 32px Unbounded; margin:4px 0 } .ticket .l span{ font:700 11.5px "JetBrains Mono"; letter-spacing:.12em; text-transform:uppercase; color:#F0C9C3 }
+.ticket .r{ width:88px; display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; transform:rotate(180deg); font:700 11px "JetBrains Mono"; letter-spacing:.14em; text-transform:uppercase }
+.tl{ margin-top:26px; position:relative }
+.tl > div{ display:grid; grid-template-columns:28px 1fr; gap:12px; padding-bottom:16px; position:relative }
+.tl > div:not(:last-child):before{ content:""; position:absolute; left:13px; top:28px; bottom:0; width:2px; background:var(--line) }
+.tl > div > i{ width:28px; height:28px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font-style:normal; font:800 12px Manrope; color:var(--mute) }
+.tl .ok > i{ background:var(--ink); color:var(--paper) } .tl .now > i{ background:var(--wine); color:var(--paper); box-shadow:0 0 0 5px var(--wine-50) }
+.tl b{ display:block; font-size:14px } .tl div div span{ font-size:12.5px; color:var(--mute) }
+
+/* мои заявки */
+.ord{ width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:8px; display:block }
+.ord .h{ display:flex; justify-content:space-between; align-items:center }
+.ord .m{ display:flex; justify-content:space-between; align-items:baseline; margin-top:10px }
+.ord .m b{ font:900 18px Unbounded }
+
+/* анкета */
+.photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.ph{ aspect-ratio:3/4; border-radius:16px; border:1.5px dashed var(--stone); background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--mute); font-size:12px; position:relative; overflow:hidden }
+.ph img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.ph input{ position:absolute; inset:0; opacity:0; cursor:pointer }
+
+/* у менеджера (демо) */
+.tgchat{ background:#0F1A24; border-radius:22px; padding:14px; margin-top:12px }
+.tgmsg{ background:#182533; color:#E9EEF3; border-radius:16px 16px 16px 4px; padding:12px 14px; font:500 13.5px/1.45 -apple-system,system-ui,sans-serif }
+.tgmsg b{ font-weight:700 } .tgmsg .bot{ color:#6AB2F2; font-weight:700; margin-bottom:6px; display:block }
+.tgbtns{ display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px }
+.tgbtns button{ background:#1E2C3A; color:#E9EEF3; border-radius:10px; min-height:40px; font:600 13px -apple-system,system-ui,sans-serif }
+.tgbtns button.full{ grid-column:1/-1 }
+
+/* нижняя панель */
+.dock{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:440px; z-index:10; background:linear-gradient(rgba(243,239,230,0),var(--paper) 22%); padding-top:18px }
+.main{ padding:0 16px 10px }
+.main button{ width:100%; height:var(--mainh); border-radius:16px; background:var(--wine); color:var(--paper); display:flex; align-items:center; justify-content:space-between; padding:0 18px; font:800 15px Unbounded; box-shadow:0 6px 18px rgba(14,14,16,.16) }
+.main button span:last-child{ font:700 14px Manrope; opacity:.9 }
+.main button.k{ background:var(--ink); box-shadow:none }
+.main button.off{ background:var(--stone); color:var(--graphite); box-shadow:none }
+.main button.busy{ opacity:.75; pointer-events:none }
+.main button.busy #mainL:after{ content:""; display:inline-block; width:14px; height:14px; margin-left:10px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; vertical-align:-2px; animation:spin 700ms linear infinite }
+@keyframes spin{ to{ transform:rotate(360deg) } }
+.main.hide{ display:none }
+.tabs{ display:grid; grid-template-columns:repeat(3,1fr); height:var(--tabs); border-top:1px solid var(--line); background:var(--paper); padding-bottom:env(safe-area-inset-bottom) }
+.tabs button{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font:700 11.5px Manrope; color:var(--mute); position:relative }
+.tabs button.on{ color:var(--ink) } .tabs button.on .ui{ color:var(--wine) }
+.tabs .badge{ position:absolute; top:6px; left:calc(50% + 6px); height:18px; min-width:18px; font-size:10px; line-height:18px }
+.tabs.hide{ display:none }
+.toast{ position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translate(-50%,-90px); opacity:0; background:var(--ink); color:var(--paper); border-radius:14px; padding:11px 16px; font:700 13px Manrope; z-index:40; transition:transform 300ms var(--ease-out), opacity 200ms; max-width:90%; text-align:center }
+.toast.on{ transform:translate(-50%,0); opacity:1 }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- 01 Хелперы: рука помощи -->
+    <symbol id="i01" viewBox="0 0 48 48"><path d="M6 30h7l9 3h7a3 3 0 0 0 0-6h-6"/><path d="M13 39l4 2h15l12-8a3 3 0 0 0-3-5l-9 5"/><path d="M6 27v14"/><path class="a" d="M30 7l1.6 3.4L35 12l-3.4 1.6L30 17l-1.6-3.4L25 12l3.4-1.6z"/></symbol>
+    <!-- 02 Промо: рупор -->
+    <symbol id="i02" viewBox="0 0 48 48"><path d="M8 20h7l17-9v26l-17-9H8z"/><path d="M15 28l3 11h5l-2-10"/><path class="a" d="M38 18c2 2 2 10 0 12M42 14c4 4 4 16 0 20"/></symbol>
+    <!-- 03 Промо-модели: силуэт + звезда -->
+    <symbol id="i03" viewBox="0 0 48 48"><circle cx="22" cy="13" r="6"/><path d="M11 42c0-10 5-17 11-17s11 7 11 17"/><path d="M17 42l5-9 5 9"/><path class="a" d="M38 6l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z"/></symbol>
+    <!-- 04 Супервайзер: рация -->
+    <symbol id="i04" viewBox="0 0 48 48"><rect x="14" y="14" width="18" height="28" rx="3"/><path d="M20 14V5"/><path d="M18 22h10M18 27h10"/><circle cx="23" cy="35" r="2.5"/><path class="a" d="M36 10c3 3 3 9 0 12M40 6c5 5 5 15 0 20"/></symbol>
+    <!-- 05 Хелперы-грузчики: коробка -->
+    <symbol id="i05" viewBox="0 0 48 48"><path d="M7 16l17-8 17 8v18l-17 8-17-8z"/><path d="M7 16l17 8 17-8M24 24v18"/><path class="a" d="M15.5 12l17 8v7"/></symbol>
+    <!-- 06 Операторы аккредитации: бейдж с QR -->
+    <symbol id="i06" viewBox="0 0 48 48"><rect x="11" y="9" width="26" height="33" rx="3"/><path d="M19 9V5h10v4"/><path d="M17 17h6v6h-6zM25 17h6v6h-6zM17 25h6v6h-6z"/><path class="a" d="M26 26h2v2h-2zM29 29h2v2h-2zM17 36h14"/></symbol>
+    <!-- 07 Водитель: хэтчбек -->
+    <symbol id="i07" viewBox="0 0 48 48"><path d="M5 31v-6l5-2 6-8h15l7 8h4l2 3v5h-4"/><path d="M14 31h18"/><circle cx="10" cy="32" r="4"/><circle cx="36" cy="32" r="4"/><path class="a" d="M18 16v7h18"/></symbol>
+    <!-- 08 Свет и съёмка: прожектор -->
+    <symbol id="i08" viewBox="0 0 48 48"><path d="M10 14h16l8-5v22l-8-5H10z"/><path d="M18 26v8M12 42l6-8 6 8"/><path class="a" d="M38 12l6-3M39 20h6M38 28l6 3"/></symbol>
+    <!-- 09 Монтажёр, рилс-мейкер: телефон 9:16 + play -->
+    <symbol id="i09" viewBox="0 0 48 48"><rect x="13" y="4" width="22" height="40" rx="4"/><path d="M21 40h6"/><path class="f" d="M20 17l11 7-11 7z"/></symbol>
+    <!-- 10 Ивент-задачи: чек-лист -->
+    <symbol id="i10" viewBox="0 0 48 48"><rect x="9" y="7" width="30" height="36" rx="3"/><path d="M18 7V4h12v3"/><path d="M23 17h10M23 26h10M23 35h7"/><path class="a" d="M14 17l2 2 3-4M14 26l2 2 3-4M14 35l2 2 3-4"/></symbol>
+    <!-- хайлайты -->
+    <symbol id="h-cases" viewBox="0 0 48 48"><rect x="7" y="13" width="34" height="24" rx="3"/><path d="M17 13V9h14v4"/><path class="a" d="M7 23h34"/></symbol>
+    <symbol id="h-team" viewBox="0 0 48 48"><circle cx="17" cy="17" r="5"/><circle cx="31" cy="17" r="5"/><path d="M7 38c0-7 4-12 10-12s10 5 10 12"/><path d="M27 27c1-1 2-1 4-1 6 0 10 5 10 12"/><path class="a" d="M24 7v4"/></symbol>
+    <symbol id="h-rev" viewBox="0 0 48 48"><path d="M8 10h32v22H22l-9 7v-7H8z"/><path class="a" d="M24 15l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z"/></symbol>
+    <symbol id="h-job" viewBox="0 0 48 48"><circle cx="21" cy="16" r="6"/><path d="M9 40c0-9 5-15 12-15 3 0 5 1 7 2"/><path class="a" d="M36 28v12M30 34h12"/></symbol>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="u-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="u-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></symbol>
+    <symbol id="u-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></symbol>
+    <symbol id="u-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></symbol>
+    <symbol id="u-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="u-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="u-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="u-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="u-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="u-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="u-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></symbol>
+    <symbol id="u-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="u-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+    <symbol id="u-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="u-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+    <symbol id="u-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="u-repeat" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+    <symbol id="u-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  </defs>
+</svg>
+
+<style>
+/* ===== бот «Смена»: сбор людей на мероприятие ===== */
+.evc{ width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; margin-bottom:8px; display:grid; grid-template-columns:58px 1fr; gap:12px }
+.evc.mine{ border-color:var(--wine); box-shadow:inset 0 0 0 1px var(--wine) }
+.dt{ background:var(--ink); color:var(--paper); border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:66px; padding:6px 0 }
+.dt b{ font:900 22px/1 Unbounded } .dt span{ font:700 10.5px "JetBrains Mono"; letter-spacing:.1em; text-transform:uppercase; color:#C9C4BA; margin-top:4px }
+.dt.today{ background:var(--wine) } .dt.today span{ color:#F0C9C3 }
+.evc .n{ font:800 15px/1.25 Manrope } .evc .p{ font-size:12.5px; color:var(--mute); margin-top:2px }
+.evc .f{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px }
+.bar{ height:6px; border-radius:3px; background:var(--sand); overflow:hidden; flex:1 }
+.bar i{ display:block; height:100%; background:var(--wine); border-radius:3px; transition:width 400ms var(--ease-out) }
+.bar.full i{ background:var(--ink) }
+.cnt{ font:700 12px "JetBrains Mono"; color:var(--graphite); white-space:nowrap }
+.evhead{ background:var(--ink); color:var(--paper); border-radius:24px; padding:18px; position:relative; overflow:hidden }
+.evhead .big{ position:absolute; right:-14px; top:-48px; font:italic 400 190px/1 "Instrument Serif"; color:var(--wl); opacity:.2; pointer-events:none }
+.evhead h2{ position:relative; font-size:21px; margin-top:10px }
+.evhead .meta{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; position:relative }
+.evhead .meta span{ display:block; font:700 10.5px "JetBrains Mono"; letter-spacing:.1em; text-transform:uppercase; color:#9C978D }
+.evhead .meta b{ display:block; font:800 14px/1.3 Manrope; margin-top:2px }
+.slot{ display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:10px 12px; margin-bottom:6px; width:100%; text-align:left }
+.slot .ico{ width:30px; height:30px }
+.slot b{ display:block; font:800 14px Manrope } .slot .bar{ margin-top:6px }
+.slot .r{ text-align:right; font:700 12px "JetBrains Mono" } .slot .r em{ display:block; font:600 11.5px Manrope; font-style:normal; color:var(--mute); margin-top:2px }
+.slot.on{ border-color:var(--wine); background:#fff; box-shadow:inset 0 0 0 1px var(--wine) }
+.slot.full{ opacity:.6 }
+.plan{ display:grid; gap:0 } .plan div{ display:grid; grid-template-columns:54px 1fr; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px }
+.plan div:last-child{ border:0 } .plan b{ font:700 13px "JetBrains Mono" }
+.ans{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px }
+.pass{ width:100%; max-width:300px; margin:20px auto 0; background:var(--ink); color:var(--paper); border-radius:22px; padding:18px; transform:rotate(-2deg); box-shadow:0 14px 30px rgba(14,14,16,.18) }
+.pass .hole{ width:44px; height:8px; border-radius:4px; background:var(--paper); margin:0 auto 14px }
+.pass .perf{ border-top:2px dashed #3A3A3E; margin:14px -18px }
+.pass .rt{ display:inline-block; background:var(--wl); border-radius:12px; padding:3px 10px; font:700 11.5px "JetBrains Mono"; letter-spacing:.08em; text-transform:uppercase }
+.pass b{ display:block; font:900 19px/1.15 Unbounded; text-transform:uppercase; margin-top:10px }
+.pass .g{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px }
+.pass .g span{ display:block; font:700 10px "JetBrains Mono"; letter-spacing:.1em; text-transform:uppercase; color:#9C978D } .pass .g i{ font:800 14px Manrope; font-style:normal }
+.pass.drop{ animation:drop 700ms var(--ease-out) both }
+.stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
+.stats div{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px }
+.stats b{ display:block; font:900 20px Unbounded } .stats span{ font-size:11.5px; color:var(--mute) }
+.stats .w b{ color:var(--wine) }
+.task{ background:var(--wine-50); border-radius:var(--r); padding:14px; margin-bottom:8px }
+.task .h{ display:flex; gap:10px; align-items:flex-start } .task .ui{ width:20px; height:20px; color:var(--wine); flex:none; margin-top:1px }
+.task b{ display:block; font-size:14.5px } .task p{ font-size:13px; color:var(--graphite); margin-top:2px }
+.task .grid2{ margin-top:12px }
+.checkin{ width:100%; aspect-ratio:1; max-width:230px; margin:26px auto 0; border-radius:50%; background:var(--wine); color:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; box-shadow:0 0 0 12px var(--wine-50), 0 14px 30px rgba(14,14,16,.18) }
+.checkin b{ font:900 22px/1.1 Unbounded; text-transform:uppercase } .checkin span{ font-size:13px; opacity:.85 }
+.checkin.done{ background:var(--ink); box-shadow:0 0 0 12px var(--sand) }
+.checkin .ui{ width:34px; height:34px }
+.sum4{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px }
+.sum4 button{ background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:10px 6px; text-align:left }
+.sum4 button.on{ border-color:var(--ink); background:#fff }
+.sum4 b{ display:block; font:900 19px Unbounded } .sum4 span{ display:block; font-size:11.5px; color:var(--mute); line-height:1.2 }
+.sum4 .go b{ color:#2F5B36 } .sum4 .mb b{ color:#9A6A12 } .sum4 .no b{ color:var(--wine) }
+.ppl{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:2px 12px }
+.pp{ display:grid; grid-template-columns:38px 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line) }
+.pp:last-child{ border:0 }
+.av{ width:38px; height:38px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font:800 13px Manrope; color:var(--graphite) }
+.pp b{ display:block; font-size:14px } .pp span{ font-size:12px; color:var(--mute) }
+.tag.y{ background:#F6ECD6; color:#7A5410 }
+.tag.k{ background:var(--ink); color:var(--paper) }
+.rolebar{ display:grid; grid-template-columns:1fr 70px; gap:10px; align-items:center; padding:7px 0 }
+.rolebar b{ font-size:13.5px; display:block; margin-bottom:5px }
+.form .field{ margin-bottom:6px }
+.need{ display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:center; padding:6px 0; border-bottom:1px solid var(--line) }
+.need:last-child{ border:0 } .need .ico{ width:28px; height:28px } .need b{ font-size:14px }
+.need .stepper button{ width:36px; height:36px } .need .stepper output{ min-width:30px; font-size:17px }
+</style>
+
+<!-- ======================= СМЕНЫ (лента) ======================= -->
+<section class="screen" id="s-feed">
+  <div class="top"><div class="t"><svg style="height:22px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 453" fill="none"><path transform="translate(73.70 369.08)" fill="#0E0E10" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#8A2B25" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/></svg></div><span class="mono muted">Смены команды</span></div>
+  <div class="hero"><div class="big">&amp;</div>
+    <div class="logo"><svg style="height:100%;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 534" fill="none"><path transform="translate(73.70 369.08)" fill="#F3EFE6" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#B5463B" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/><path transform="translate(182.93 453.82)" fill="#F3EFE6" d="M3.00218505859375 0.0V-24.82H17.878907470703126V-21.117025634765625H7.181848388671876V-14.666251953125H16.688907470703125V-10.977386840820314H7.181848388671876V-3.7029743652343754H17.878907470703126V0.0H3.00218505859375Z M46.55549609375001 0.0 40.3027313232422 -24.82H44.69795764160157L48.456470458984384 -8.652176147460938Q48.739344482421885 -7.441117065429688 49.015508361816416 -6.077297668457032Q49.29167224121095 -4.713478271484376 49.42767224121095 -3.871806030273438Q49.563672241210945 -4.713478271484376 49.80294537353517 -6.077297668457032Q50.04221850585938 -7.441117065429688 50.32509252929688 -8.67206689453125L54.00982385253907 -24.82H58.297268676757824L52.07017614746095 0.0H46.55549609375001Z M81.20218505859377 0.0V-24.82H96.07890747070314V-21.117025634765625H85.3818483886719V-14.666251953125H94.88890747070315V-10.977386840820314H85.3818483886719V-3.7029743652343754H96.07890747070314V0.0H81.20218505859377Z M119.76327758789066 0.0V-24.82H124.93726867675784L131.84298327636722 -4.76344482421875Q131.7550925292969 -5.8521337890625 131.64025640869144 -7.33182275390625Q131.52542028808597 -8.811511718750001 131.45452954101566 -10.347637695312502Q131.38363879394535 -11.883763671875 131.38363879394535 -13.067982177734375V-24.82H135.2367224121094V0.0H130.06273132324222L123.21090747070315 -20.056555175781252Q123.29879821777347 -19.08142919921875 123.38668896484377 -17.69124755859375Q123.47457971191409 -16.301067993164065 123.5454704589844 -14.834559631347657Q123.61636120605472 -13.36805126953125 123.61636120605472 -12.149832763671876V0.0H119.76327758789066Z M164.47327758789066 0.0V-20.892445922851564H157.97163879394535V-24.83410925292969H175.22836120605473V-20.892445922851564H168.7267224121094V0.0H164.47327758789066Z M205.75643701171882 0.34Q203.20898327636723 0.34 201.34858416748054 -0.515781494140625Q199.4881850585938 -1.3715629882812501 198.47651281738288 -2.9413444824218753Q197.46484057617192 -4.5111259765625 197.45073132324225 -6.6589074707031255H201.704176147461Q201.704176147461 -5.146940917968751 202.80015942382818 -4.267793762207032Q203.89614270019536 -3.3886466064453127 205.81610925292975 -3.3886466064453127Q207.63985729980476 -3.3886466064453127 208.66784057617193 -4.243739135742188Q209.69582385253912 -5.098831665039063 209.69582385253912 -6.610798217773438Q209.69582385253912 -7.868109252929688 208.96644146728522 -8.791201782226564Q208.2370590820313 -9.714294311523439 206.90018505859382 -10.056840576171876L204.03145373535162 -10.832370117187502Q201.12342028808598 -11.594479370117188 199.52762207031256 -13.539878479003907Q197.9318238525391 -15.485277587890627 197.9318238525391 -18.225857299804687Q197.9318238525391 -20.33131103515625 198.89249609375005 -21.889874023437503Q199.853168334961 -23.448437011718752 201.60451281738287 -24.311274169921877Q203.35585729980474 -25.17410925292969 205.74487402343755 -25.17410925292969Q209.32712597656257 -25.17410925292969 211.4483065795899 -23.315327758789063Q213.56948718261725 -21.456546264648438 213.58359643554692 -18.331092529296875H209.33015161132818Q209.33015161132818 -19.789168334960937 208.3842775878907 -20.617314453125Q207.43840356445318 -21.445462646484376 205.69098327636723 -21.445462646484376Q204.01734448242195 -21.445462646484376 203.1013065795899 -20.662532958984375Q202.18526867675786 -19.87960534667969 202.18526867675786 -18.458075805664063Q202.18526867675786 -17.186655517578128 202.89186956787114 -16.273508361816408Q203.59847045898442 -15.360361206054689 204.90967224121098 -15.003705688476563L207.8720758056641 -14.194176147460938Q210.83145373535163 -13.432066894531252 212.39036120605473 -11.512340026855469Q213.94926867675787 -9.592613159179688 213.94926867675787 -6.778251953125Q213.94926867675787 -4.65868896484375 212.92765209960942 -3.0491259765625003Q211.90603344726568 -1.4395629882812502 210.0696889648438 -0.549781494140625Q208.23334448242193 0.34 205.75643701171882 0.34Z M274.9027313232423 0.0 281.1439331054689 -24.82H286.6303946533204L292.8972686767579 0.0H288.57004235839855L287.1966220703126 -6.019168334960938H280.6174871826173L279.24406689453133 0.0H274.9027313232423ZM281.3687224121095 -9.478361206054688H286.4113868408204L284.925092529297 -16.153714599609376Q284.5601092529298 -17.812555175781252 284.28394537353523 -19.165155029296876Q284.0077814941407 -20.517756958007816 283.9000000000001 -21.118882934570316Q283.79221850585947 -20.517756958007816 283.53594537353524 -19.17510144042969Q283.279672241211 -17.832445922851562 282.89479821777354 -16.187714599609375L281.3687224121095 -9.478361206054688Z M323.14594537353526 0.34Q320.75276477050795 0.34 318.9744749145509 -0.5597268676757813Q317.19618505859387 -1.4594537353515626 316.21562207031263 -3.114235229492188Q315.2350590820314 -4.769016723632813 315.2350590820314 -6.998907470703125V-17.821092529296877Q315.2350590820314 -20.08498327636719 316.21562207031263 -21.722764770507816Q317.19618505859387 -23.360546264648438 318.9744749145509 -24.26027416992188Q320.75276477050795 -25.16 323.14594537353526 -25.16Q325.5391259765626 -25.16 327.30041583251966 -24.253218505859376Q329.0617056884767 -23.346437011718752 330.0352140502931 -21.713158691406253Q331.0087224121095 -20.07988037109375 331.0087224121095 -17.821092529296877H326.75527758789076Q326.75527758789076 -19.57105908203125 325.8057076416017 -20.501207275390627Q324.85613873291027 -21.43135339355469 323.13230407714855 -21.43135339355469Q321.4084704589845 -21.43135339355469 320.4484871826173 -20.504220458984378Q319.4885039062501 -19.577087524414065 319.4885039062501 -17.835201782226562V-6.998907470703125Q319.4885039062501 -5.270361602783203 320.4484871826173 -4.322449478149414Q321.4084704589845 -3.3745373535156253 323.13230407714855 -3.3745373535156253Q324.85613873291027 -3.3745373535156253 325.8057076416017 -4.3245778503417975Q326.75527758789076 -5.274618347167969 326.75527758789076 -7.0070448303222665V-9.521857299804688H322.51890747070325V-13.20494091796875H331.0087224121095V-6.998907470703125Q331.0087224121095 -4.774869293212891 330.0352140502931 -3.1242161407470705Q329.0617056884767 -1.4735629882812502 327.30041583251966 -0.5667814941406251Q325.5391259765626 0.34 323.14594537353526 0.34Z M354.9021850585939 0.0V-24.82H369.7789074707033V-21.117025634765625H359.08184838867203V-14.666251953125H368.58890747070325V-10.977386840820314H359.08184838867203V-3.7029743652343754H369.7789074707033V0.0H354.9021850585939Z M393.4632775878908 0.0V-24.82H398.63726867675797L405.54298327636735 -4.76344482421875Q405.455092529297 -5.8521337890625 405.3402564086916 -7.33182275390625Q405.2254202880861 -8.811511718750001 405.1545295410158 -10.347637695312502Q405.0836387939455 -11.883763671875 405.0836387939455 -13.067982177734375V-24.82H408.93672241210953V0.0H403.76273132324235L396.9109074707033 -20.056555175781252Q396.9987982177736 -19.08142919921875 397.0866889648439 -17.69124755859375Q397.17457971191425 -16.301067993164065 397.2454704589845 -14.834559631347657Q397.31636120605486 -13.36805126953125 397.31636120605486 -12.149832763671876V0.0H393.4632775878908Z M440.4459453735353 0.34Q438.052764770508 0.34 436.274474914551 -0.5597268676757813Q434.49618505859394 -1.4594537353515626 433.5156220703127 -3.114235229492188Q432.53505908203147 -4.769016723632813 432.53505908203147 -6.998907470703125V-17.821092529296877Q432.53505908203147 -20.08498327636719 433.5156220703127 -21.722764770507816Q434.49618505859394 -23.360546264648438 436.274474914551 -24.26027416992188Q438.052764770508 -25.16 440.4459453735353 -25.16Q442.8391259765627 -25.16 444.60041583251973 -24.253218505859376Q446.3617056884768 -23.346437011718752 447.3352140502932 -21.713158691406253Q448.30872241210955 -20.07988037109375 448.30872241210955 -17.821092529296877H444.0552775878908Q444.0552775878908 -19.57105908203125 443.1057076416018 -20.501207275390627Q442.15613873291034 -21.43135339355469 440.4323040771486 -21.43135339355469Q438.70847045898455 -21.43135339355469 437.7484871826174 -20.504220458984378Q436.7885039062502 -19.577087524414065 436.7885039062502 -17.835201782226562V-6.998907470703125Q436.7885039062502 -5.263743286132813 437.7484871826174 -4.326194946289063Q438.70847045898455 -3.3886466064453127 440.4323040771486 -3.3886466064453127Q442.15613873291034 -3.3886466064453127 443.1057076416018 -4.326194946289063Q444.0552775878908 -5.263743286132813 444.0552775878908 -6.998907470703125H448.30872241210955Q448.30872241210955 -4.7831259765625 447.3352140502932 -3.128344482421875Q446.3617056884768 -1.4735629882812502 444.60041583251973 -0.5667814941406251Q442.8391259765627 0.34 440.4459453735353 0.34Z M477.27327758789085 0.0V-9.023420288085939L469.992185058594 -24.82H474.42719287109395L478.3029832763674 -16.211259765625Q478.75076477050806 -15.2021337890625 479.0583823852541 -14.219264221191407Q479.3660000000002 -13.236394653320314 479.47378149414084 -12.666033447265626Q479.60145373535175 -13.236394653320314 479.8962352294924 -14.219264221191407Q480.191016723633 -15.2021337890625 480.61890747070333 -16.211259765625L484.39269787597675 -24.82H488.8078149414065L481.5267224121096 -9.023420288085939V0.0H477.27327758789085Z"/></svg></div>
+    <h1>Ближайшие <span class="amp">смены</span></h1>
+    <p id="heroP">Отмечайтесь, на какие проекты выходите. Чем раньше ответ – тем выше шанс попасть в состав.</p>
+  </div>
+  <div class="lbl"><span class="mono">Моя роль</span></div>
+  <div class="chips" id="roleFilter"></div>
+  <div class="lbl"><span class="mono">Открытый набор</span><span class="mono" id="feedCnt"></span></div>
+  <div id="feedList"></div>
+</section>
+
+<!-- ======================= СМЕНА ======================= -->
+<section class="screen flow" id="s-ev">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted" id="evWhen"></span><h2 id="evTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></h2></div></div>
+  <div class="evhead" id="evHead"></div>
+  <div class="lbl"><span class="mono">Кого ищем · выберите роль</span></div>
+  <div id="slots"></div>
+  <div class="lbl"><span class="mono">План смены</span></div>
+  <div class="card plan" id="plan"></div>
+  <div class="lbl"><span class="mono">Важно</span></div>
+  <div class="note"><svg class="ui"><use href="#u-info"/></svg><div id="evNote"></div></div>
+  <div class="ans" id="ans"></div>
+</section>
+
+<!-- ======================= ЗАПИСАН ======================= -->
+<section class="screen flow" id="s-ok">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Ответ принят</span><h2 id="okTitle">Вы в составе</h2></div></div>
+  <p class="sub" style="margin:0" id="okSub"></p>
+  <div class="pass" id="pass"></div>
+  <div class="tl rise" id="okTl" style="margin-top:28px"></div>
+  <div class="grid2"><button class="btn s" data-act="cal">В календарь</button><button class="btn s" data-act="cancel">Не смогу выйти</button></div>
+</section>
+
+<!-- ======================= МОИ СМЕНЫ ======================= -->
+<section class="screen" id="s-my">
+  <div class="top"><div class="t"><span class="mono muted">Мария Соколова · хелпер</span><h2>Мои смены</h2></div></div>
+  <div class="stats"><div><b>12</b><span>смен отработано</span></div><div><b>74</b><span>часа на ивентах</span></div><div class="w"><b>100%</b><span>выходов без отмен</span></div></div>
+  <div class="lbl"><span class="mono">Нужно действие</span></div>
+  <div id="tasks"></div>
+  <div class="lbl"><span class="mono">Записан</span></div>
+  <div id="myList"></div>
+</section>
+
+<!-- ======================= ДЕНЬ СМЕНЫ ======================= -->
+<section class="screen flow" id="s-check">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Сегодня</span><h2 id="chTitle"></h2></div></div>
+  <div class="note wine"><svg class="ui"><use href="#u-bolt"/></svg><div id="chNote"></div></div>
+  <button class="checkin" id="chBtn" data-act="here"></button>
+  <p class="sub" style="text-align:center;margin-top:26px" id="chSub">Отметка уходит супервайзеру – он видит, кто уже на площадке</p>
+  <div class="lbl"><span class="mono">Если опаздываете</span></div>
+  <div class="seg" id="late"><button data-late="10">10 мин</button><button data-late="20">20 мин</button><button data-late="30">30+ мин</button></div>
+  <div class="lbl"><span class="mono">Супервайзер смены</span></div>
+  <div class="ppl"><div class="pp"><div class="av" style="background:var(--ink);color:var(--paper)">АА</div><div><b>Анатолий</b><span>старший на площадке</span></div><button class="btn s" data-act="call" style="min-height:38px">Написать</button></div></div>
+</section>
+
+<!-- ======================= СОСТАВ (менеджер) ======================= -->
+<section class="screen" id="s-mgr">
+  <div class="top"><div class="t"><span class="mono muted">Для менеджера</span><h2>Состав на смены</h2></div><button class="iconbtn" data-act="new" aria-label="Новый сбор"><svg class="ui"><use href="#u-plus"/></svg></button></div>
+  <div class="chips" id="mgrEvs" style="flex-wrap:nowrap;overflow-x:auto;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none"></div>
+  <div class="seg" id="mode" style="margin-top:12px"><button data-mode="set" class="on">Набор</button><button data-mode="day">День смены</button></div>
+  <div class="lbl"><span class="mono" id="sumL">Ответы</span><span class="mono" id="sumR"></span></div>
+  <div class="sum4" id="sum4"></div>
+  <div class="lbl"><span class="mono">Закрыто по ролям</span></div>
+  <div class="card" id="roleBars" style="padding:8px 14px"></div>
+  <div class="lbl"><span class="mono" id="pplL"></span><span class="mono" id="pplR"></span></div>
+  <div class="ppl" id="ppl"></div>
+  <div class="grid2" style="margin-top:12px" id="mgrActs"></div>
+</section>
+
+<!-- ======================= НОВЫЙ СБОР ======================= -->
+<section class="screen flow form" id="s-new">
+  <div class="top"><button class="iconbtn" data-act="back" aria-label="Назад"><svg class="ui"><use href="#u-back"/></svg></button><div class="t"><span class="mono muted">Для менеджера</span><h2>Новый сбор</h2></div></div>
+  <label class="field"><span class="k">Мероприятие</span><input id="nName" value="Презентация бренда"></label>
+  <div class="grid2"><label class="field"><span class="k">Дата</span><input id="nDate" type="date"></label><label class="field"><span class="k">Время</span><input id="nTime" value="12:00–20:00"></label></div>
+  <label class="field"><span class="k">Площадка и метро</span><input id="nPlace" value="Дизайн-завод Флакон · Дмитровская"></label>
+  <div class="lbl"><span class="mono">Сколько человек нужно</span></div>
+  <div class="card" style="padding:4px 14px" id="needs"></div>
+  <div class="lbl"><span class="mono">Ответить до</span></div>
+  <div class="seg" id="dl"><button data-dl="12 часов">12 ч</button><button data-dl="24 часов" class="on">24 ч</button><button data-dl="2 дней">2 дня</button></div>
+  <div class="lbl"><span class="mono">Так увидит команда</span></div>
+  <div class="tgchat"><div class="tgmsg" id="post"></div><div class="tgbtns"><button>✅ Иду</button><button>🤔 Под вопросом</button><button class="full">❌ Не смогу</button></div></div>
+</section>
+
+<div class="dock" id="dock">
+  <div class="main" id="main"><button id="mainBtn"><span id="mainL"></span><span id="mainR"></span></button></div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="feed"><svg class="ui"><use href="#u-home"/></svg>Смены</button>
+    <button data-tab="my"><svg class="ui"><use href="#u-list"/></svg>Мои<span class="badge" id="tabBadge" style="display:none"></span></button>
+    <button data-tab="mgr"><svg class="ui"><use href="#u-team"/></svg>Состав</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   T&R – бот «Смена»: сбор людей на конкретное мероприятие. Концепт, версия 1.
+   Исполнитель: видит смены → «Иду / Под вопросом / Не смогу» → подтверждает выход за день → отмечается на площадке.
+   Менеджер: видит, кто точно выходит по каждой роли, кто молчит, лист ожидания и отметки в день смены.
+   ============================================================ */
+const CONFIG = { API_URL:"https://ЛОГИН.pythonanywhere.com", CONFIRM_HOURS:24, ME:{name:"Мария Соколова", role:"Хелпер"} };
+// ставки исполнителям – заглушки, заменить на реальные
+const PAY = { "Хелпер":450, "Промо":450, "Промо-модель":700, "Аккредитация":450, "Хелпер-грузчик":500, "Супервайзер":600 };
+const ICO = { "Хелпер":"01", "Промо":"02", "Промо-модель":"03", "Супервайзер":"04", "Хелпер-грузчик":"05", "Аккредитация":"06" };
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ico=r=>`<svg class="ico" viewBox="0 0 48 48"><use href="#i${ICO[r]||"01"}"/></svg>`;
+const ui=n=>`<svg class="ui"><use href="#u-${n}"/></svg>`;
+const day=n=>{ const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n); return d; };
+const WD=["вс","пн","вт","ср","чт","пт","сб"], MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const dlong=d=>WD[d.getDay()]+", "+d.getDate()+" "+MON[d.getMonth()];
+const rel=n=>n===0?"сегодня":n===1?"завтра":"через "+n+" "+(n<5?"дня":"дней");
+const hrs=e=>{ const [a,b]=e.time.split("–").map(t=>+t.split(":")[0]); return (b>a?b-a:b+24-a); };
+
+const EVENTS = [
+  {id:"e1", n:0, name:"Корпоратив IT-компании", place:"Loft Hall", metro:"Улица 1905 года", time:"18:00–23:00", meet:"17:00", dress:"Total black",
+   slots:{"Хелпер":[6,6],"Аккредитация":[2,2]}, plan:[["17:00","Сбор, бриф у входа"],["17:30","Гардероб, навигация, регистрация"],["18:00","Встреча гостей"],["23:00","Свернуть зоны, сдать бейджи"]]},
+  {id:"e2", n:1, name:"Выставка «Город будущего»", place:"Экспоцентр, павильон 2", metro:"Выставочная", time:"09:00–19:00", meet:"08:15", dress:"Total black",
+   slots:{"Хелпер":[3,4],"Промо":[3,4],"Промо-модель":[1,2]}, plan:[["08:15","Сбор у входа 3, бриф"],["09:00","Открытие, раздача материалов"],["14:00","Обед по сменам, 30 мин"],["19:00","Демонтаж стенда"]]},
+  {id:"e3", n:5, name:"Форум «Digital-день»", place:"Технопарк", metro:"трансфер от м. Славянский бульвар", time:"08:00–18:00", meet:"07:15", dress:"Total black, удобная обувь",
+   slots:{"Аккредитация":[3,6],"Хелпер":[5,10],"Хелпер-грузчик":[1,4],"Супервайзер":[1,1]}, plan:[["07:15","Трансфер от метро"],["08:00","Регистрация, выдача бейджей"],["10:00","Залы, микрофоны, навигация"],["18:00","Демонтаж"]]},
+  {id:"e4", n:8, name:"Промо-акция в ТЦ", place:"ТЦ «Афимолл»", metro:"Деловой центр", time:"12:00–20:00", meet:"11:30", dress:"Форма клиента – выдадут на месте",
+   slots:{"Промо":[4,4]}, plan:[["11:30","Сбор, получение формы"],["12:00","Сэмплинг у входов"],["20:00","Сдача остатков"]]},
+];
+// ответы исполнителя: st go|maybe|no|wait, role, conf (подтвердил за день), check here|late
+const S = { screen:"feed", ev:null, pick:null, filter:"Все", mgrEv:"e2", mode:"set", list:"go", late:null,
+  resp:{ e1:{st:"go",role:"Хелпер",conf:true}, e2:{st:"go",role:"Хелпер",conf:false} },
+  need:{"Хелпер":4,"Промо":2,"Аккредитация":0,"Хелпер-грузчик":0,"Промо-модель":0,"Супервайзер":1}, dl:"24 часов" };
+
+// команда для экрана менеджера (демо)
+const NAMES=["Мария Соколова","Иван Петров","Алина Ким","Дмитрий Орлов","Софья Белова","Артур Хасанов","Ксения Лебедева","Никита Громов","Полина Зайцева","Егор Миронов","Вика Руденко","Тимур Абдуллаев","Даша Ершова","Глеб Сидоров","Лена Фролова","Максим Юдин"];
+const TEAM={
+  e1: NAMES.slice(0,8).map((n,i)=>({n, role:i<6?"Хелпер":"Аккредитация", st:"go", conf:true, check:i<5?"here":i===5?"late":null, lateMin:i===5?15:0})),
+  e2: [["go",1,"Хелпер"],["go",0,"Хелпер"],["go",1,"Хелпер"],["go",1,"Промо"],["go",1,"Промо"],["go",0,"Промо"],["go",1,"Промо-модель"],["maybe",0,"Хелпер"],["maybe",0,"Промо-модель"],["no",0,"Промо"],["no",0,"Хелпер"],["no",0,"Хелпер"],["silent",0,"Хелпер"],["silent",0,"Промо"],["silent",0,"Промо-модель"],["wait",0,"Промо"]]
+      .map(([st,c,role],i)=>({n:NAMES[i],role,st,conf:!!c})),
+  e3: NAMES.slice(0,14).map((n,i)=>({n, role:["Аккредитация","Хелпер","Хелпер","Хелпер-грузчик","Аккредитация","Хелпер","Супервайзер","Хелпер","Аккредитация","Хелпер","Хелпер","Хелпер","Аккредитация","Хелпер-грузчик"][i], st:i<10?"go":i<12?"maybe":"silent", conf:false})),
+  e4: NAMES.slice(2,8).map((n,i)=>({n, role:"Промо", st:i<4?"go":"wait", conf:false})),
+};
+const ST={go:["Идут","Иду","g"], maybe:["Под вопросом","Под вопросом","y"], no:["Не могут","Не смогу","o"], silent:["Молчат","Нет ответа",""], wait:["Лист ожидания","В листе ожидания","k"]};
+
+const tg=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData!==undefined?Telegram.WebApp:null;
+const inTG=!!(tg&&tg.initData);
+if(tg){ try{ tg.ready(); tg.expand(); tg.setHeaderColor("#F3EFE6"); tg.setBackgroundColor("#F3EFE6"); }catch(e){} }
+const haptic=(t="light")=>{ try{ tg&&tg.HapticFeedback&&(t==="ok"?tg.HapticFeedback.notificationOccurred("success"):t==="err"?tg.HapticFeedback.notificationOccurred("error"):tg.HapticFeedback.impactOccurred(t)); }catch(e){} };
+const ask=(m,cb)=>{ if(inTG&&tg.showConfirm) tg.showConfirm(m,ok=>{ if(ok) cb(); }); else if(confirm(m)) cb(); };
+function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.add("on"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("on"),2000); }
+const store={ get(){ try{ return JSON.parse(localStorage.getItem("tr-smena")||"null"); }catch(e){ return null; } }, set(){ try{ localStorage.setItem("tr-smena",JSON.stringify(S.resp)); }catch(e){} } };
+const byId=id=>EVENTS.find(e=>e.id===id);
+// счётчик: сколько записано по роли с учётом ответа пользователя
+function filled(e,r){ let [have,need]=e.slots[r]; const me=S.resp[e.id]; if(me&&me.st==="go"&&me.role===r&&!(e.id==="e1"||e.id==="e2")) have=Math.min(need,have+1); return [have,need]; }
+function totals(e){ let h=0,n=0; for(const r in e.slots){ const [a,b]=filled(e,r); h+=a; n+=b; } return [h,n]; }
+
+const TABS={feed:"feed",my:"my",mgr:"mgr"}, BACK={ev:"feed",ok:"ev",check:"my",new:"mgr"};
+function go(s,opt={}){
+  const prev=S.screen; S.screen=s;
+  const dir=opt.fade?"fade":(opt.back||BACK[prev]===s)?"back":"";
+  $$(".screen").forEach(e=>{ const on=e.id==="s-"+s; e.classList.remove("on","back","fade"); if(on){ void e.offsetWidth; e.classList.add("on"); if(dir) e.classList.add(dir); } });
+  ({feed:rFeed,ev:rEv,ok:rOk,my:rMy,check:rCheck,mgr:rMgr,new:rNew}[s])();
+  rDock(); window.scrollTo(0,0);
+  if(tg&&tg.BackButton){ try{ BACK[s]?tg.BackButton.show():tg.BackButton.hide(); }catch(e){} }
+}
+function back(){ haptic(); if(BACK[S.screen]) go(S.screen==="ok"?"feed":BACK[S.screen],{back:true}); }
+if(tg&&tg.BackButton){ try{ tg.BackButton.onClick(back); }catch(e){} }
+
+function rDock(){
+  const s=S.screen, b=$("#mainBtn"), m=$("#main");
+  $("#tabs").classList.toggle("hide",!TABS[s]);
+  $$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.tab===s));
+  const t=todo().length, bd=$("#tabBadge"); bd.style.display=t?"":"none"; bd.textContent=t;
+  m.classList.remove("hide"); b.className="";
+  const set=(l,r="",c="")=>{ $("#mainL").textContent=l; $("#mainR").textContent=r; b.className=c; };
+  if(s==="ev"){ const e=byId(S.ev), me=S.resp[e.id];
+    if(me&&me.st==="go") set("Вы в составе",me.role,"k");
+    else if(!S.pick) set("Выберите роль","","off");
+    else { const [a,n]=filled(e,S.pick); a>=n?set("В лист ожидания",S.pick,"k"):set("Иду на смену",S.pick+" · "+(PAY[S.pick]*hrs(e)).toLocaleString("ru")+" ₽"); } }
+  else if(s==="ok") set("К сменам","","k");
+  else if(s==="check"){ const me=S.resp.e1; me&&me.check==="here"?set("Отмечено","","k"):m.classList.add("hide"); }
+  else if(s==="new") set("Отправить команде",$$("#needs output").reduce((a,o)=>a+ +o.textContent,0)+" чел");
+  else m.classList.add("hide");
+}
+$("#mainBtn").onclick=()=>{ const s=S.screen;
+  if(s==="ev"){ const e=byId(S.ev), me=S.resp[e.id]; if(me&&me.st==="go") return go("ok");
+    if(!S.pick){ haptic("err"); return toast("Сначала выберите роль"); }
+    const [a,n]=filled(e,S.pick); answer(a>=n?"wait":"go"); }
+  else if(s==="ok") go("feed",{back:true});
+  else if(s==="check") go("my",{back:true});
+  else if(s==="new"){ haptic("ok"); toast("Сбор отправлен в канал команды – ответы появятся в «Составе»"); go("mgr",{back:true}); }
+};
+
+function answer(st){
+  const e=byId(S.ev); S.resp[e.id]={st, role:S.pick||CONFIG.ME.role, conf:false}; store.set();
+  if(inTG) fetch(CONFIG.API_URL+"/shift",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:tg.initData,event:e.id,answer:S.resp[e.id]})}).catch(()=>{});
+  haptic(st==="no"?"medium":"ok");
+  if(st==="go"||st==="wait") return go("ok");
+  toast(st==="no"?"Ок, не ждём вас на этой смене":"Отметили «под вопросом» – напомним за "+CONFIG.CONFIRM_HOURS+" ч до набора"); go("feed",{back:true});
+}
+
+/* ---------- лента ---------- */
+function rFeed(){
+  const roles=["Все",...Object.keys(ICO)];
+  $("#roleFilter").innerHTML=roles.map(r=>`<button class="chip ${S.filter===r?"on":""}" data-filter="${r}">${r}</button>`).join("");
+  const list=EVENTS.filter(e=>e.n>0&&(S.filter==="Все"||e.slots[S.filter]));
+  $("#feedCnt").textContent=list.length+" "+(list.length===1?"смена":list.length<5?"смены":"смен");
+  $("#feedList").innerHTML=list.map(evCard).join("")||`<div class="note"><svg class="ui"><use href="#u-info"/></svg><div>Для этой роли пока нет смен – пришлём уведомление, как только появятся.</div></div>`;
+}
+function evCard(e){
+  const d=day(e.n), [h,n]=totals(e), me=S.resp[e.id], full=h>=n;
+  const st=me?`<span class="tag ${ST[me.st][2]}">${ST[me.st][1]}</span>`:full?`<span class="tag k">Состав собран</span>`:`<span class="tag o">${rel(e.n)}</span>`;
+  return `<button class="evc ${me&&me.st==="go"?"mine":""}" data-ev="${e.id}"><div class="dt ${e.n===0?"today":""}"><b>${d.getDate()}</b><span>${WD[d.getDay()]}</span></div><div><div class="n">${e.name}</div><div class="p">${e.time} · ${e.place}</div><div class="f"><div class="bar ${full?"full":""}"><i style="width:${Math.round(h/n*100)}%"></i></div><span class="cnt">${h}/${n}</span>${st}</div></div></button>`;
+}
+
+/* ---------- смена ---------- */
+function rEv(){
+  const e=byId(S.ev), d=day(e.n), me=S.resp[e.id];
+  if(me&&!S.pick) S.pick=me.role;
+  $("#evWhen").textContent=dlong(d)+" · "+rel(e.n); $("#evTitle").textContent=e.name;
+  $("#evHead").innerHTML=`<div class="big">&amp;</div><span class="tag w" style="position:relative">${Object.values(e.slots).reduce((a,[h,n])=>a+Math.max(0,n-h),0)} мест свободно</span><h2>${e.name}</h2>
+    <div class="meta"><div><span>Время</span><b>${e.time}</b></div><div><span>Сбор</span><b>${e.meet}</b></div><div><span>Площадка</span><b>${e.place}</b></div><div><span>Метро</span><b>${e.metro}</b></div></div>`;
+  $("#slots").innerHTML=Object.keys(e.slots).map(r=>{ const [a,n]=filled(e,r), full=a>=n;
+    return `<button class="slot ${S.pick===r?"on":""} ${full&&S.pick!==r?"full":""}" data-pick="${r}">${ico(r)}<div><b>${r}</b><div class="bar ${full?"full":""}"><i style="width:${Math.round(a/n*100)}%"></i></div></div><div class="r">${a}/${n}<em>${full?"лист ожидания":PAY[r]+" ₽/ч"}</em></div></button>`; }).join("");
+  $("#plan").innerHTML=e.plan.map(([t,x])=>`<div><b>${t}</b><span>${x}</span></div>`).join("");
+  $("#evNote").innerHTML=`Дресс-код: <b>${e.dress}</b>. За ${CONFIG.CONFIRM_HOURS} ч до смены бот попросит подтвердить выход – без подтверждения место уйдёт тому, кто в листе ожидания.`;
+  $("#ans").innerHTML=me&&me.st==="go"?`<button class="btn s full" style="grid-column:1/-1" data-act="cancel">Не смогу выйти</button>`
+    :`<button class="btn s ${me&&me.st==="maybe"?"on":""}" data-ans="maybe">🤔 Под вопросом</button><button class="btn s" data-ans="no">Не смогу</button>`;
+}
+
+/* ---------- записан ---------- */
+function rOk(){
+  const e=byId(S.ev), me=S.resp[e.id], d=day(e.n), wait=me.st==="wait";
+  $("#okTitle").textContent=wait?"Вы в листе ожидания":"Вы в составе";
+  $("#okSub").textContent=wait?"Все места на роль заняты. Если кто-то откажется – бот сразу предложит место вам, ответить нужно будет в течение 2 часов.":`Ждём вас ${dlong(d)} в ${e.meet}. За ${CONFIG.CONFIRM_HOURS} ч бот попросит подтвердить выход.`;
+  $("#pass").innerHTML=`<div class="hole"></div><svg style="height:26px;width:auto;display:block" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 858 534" fill="none"><path transform="translate(73.70 369.08)" fill="#F3EFE6" d="M87.3 -191.7H164.7V0.0H87.3V-191.7ZM6.3 -225.0H245.7V-156.0H6.3V-225.0Z M517.38 -128.7H592.98Q604.38 -128.7 610.6800000000001 -134.1Q616.98 -139.5 616.98 -149.7Q616.98 -159.9 610.6800000000001 -165.29999999999998Q604.38 -170.7 592.98 -170.7H506.58000000000004L541.38 -205.5V0.0H463.98V-225.0H604.98Q631.98 -225.0 652.23 -215.54999999999998Q672.48 -206.1 683.73 -189.29999999999998Q694.98 -172.5 694.98 -149.7Q694.98 -127.5 683.73 -110.55Q672.48 -93.6 652.23 -84.3Q631.98 -75.0 604.98 -75.0H517.38V-128.7ZM543.78 -105.3H629.28L703.98 0.0H615.48L543.78 -105.3Z"/><path transform="translate(73.70 369.08)" fill="#B5463B" d="M334.308 3.564Q310.152 3.564 291.936 -6.732Q273.72 -17.028000000000002 263.622 -35.244Q253.524 -53.46 253.524 -77.616Q253.524 -100.98 262.83 -121.176Q272.136 -141.372 288.174 -156.024Q304.212 -170.67600000000002 324.408 -177.012Q312.528 -192.45600000000002 312.528 -215.82000000000002Q312.528 -236.412 321.834 -253.044Q331.14 -269.676 347.178 -279.378Q363.216 -289.08000000000004 383.016 -289.08000000000004Q395.688 -289.08000000000004 407.37 -284.922Q419.052 -280.764 426.576 -273.636Q432.12 -268.488 430.536 -260.56800000000004L419.448 -202.752Q418.26 -196.812 413.904 -196.812Q409.15200000000004 -196.812 408.756 -203.544L408.36 -211.86Q406.776 -244.728 399.252 -258.39Q391.728 -272.052 374.70000000000005 -272.052Q360.444 -272.052 349.158 -264.528Q337.872 -257.004 331.14 -243.936Q324.408 -230.86800000000002 324.408 -214.23600000000002Q324.408 -190.872 337.08 -179.78400000000002Q343.02 -180.57600000000002 348.96000000000004 -180.57600000000002Q369.948 -180.57600000000002 369.948 -170.28Q369.948 -160.776 354.9 -160.776Q342.624 -160.776 332.328 -168.696Q282.036 -153.252 282.036 -86.328Q282.036 -49.896 297.876 -29.502000000000002Q313.716 -9.108 341.43600000000004 -9.108Q361.236 -9.108 377.274 -19.008000000000003Q393.312 -28.908 402.81600000000003 -45.342Q412.32000000000005 -61.776 412.32000000000005 -81.97200000000001Q412.32000000000005 -112.86 383.016 -112.86Q371.53200000000004 -112.86 364.998 -108.30600000000001Q358.464 -103.75200000000001 358.464 -97.02000000000001Q358.464 -91.08 362.424 -89.10000000000001Q366.384 -87.12 371.53200000000004 -85.932Q376.68 -84.744 380.64 -81.774Q384.6 -78.804 384.6 -70.884Q384.6 -63.756 379.452 -59.598000000000006Q374.304 -55.440000000000005 365.988 -55.440000000000005Q355.296 -55.440000000000005 348.96000000000004 -63.36Q342.624 -71.28 342.624 -84.348Q342.624 -99.0 351.336 -109.69200000000001Q360.048 -120.384 374.898 -125.13600000000001Q389.74800000000005 -129.888 407.568 -126.72L419.844 -124.74000000000001Q445.584 -120.78 445.584 -131.076Q445.584 -135.828 441.228 -137.808Q436.872 -139.788 431.328 -141.57Q425.784 -143.352 421.428 -146.71800000000002Q417.072 -150.084 417.072 -157.21200000000002Q417.072 -163.94400000000002 421.824 -168.3Q426.576 -172.656 435.288 -172.656Q446.77200000000005 -172.656 453.108 -164.538Q459.444 -156.42000000000002 459.444 -142.95600000000002Q459.444 -125.92800000000001 448.752 -115.632Q438.06 -105.336 421.428 -106.524Q424.20000000000005 -97.41600000000001 424.20000000000005 -84.744Q424.20000000000005 -59.400000000000006 412.51800000000003 -39.402Q400.836 -19.404 380.64 -7.92Q360.444 3.564 334.308 3.564Z"/><path transform="translate(182.93 453.82)" fill="#F3EFE6" d="M3.00218505859375 0.0V-24.82H17.878907470703126V-21.117025634765625H7.181848388671876V-14.666251953125H16.688907470703125V-10.977386840820314H7.181848388671876V-3.7029743652343754H17.878907470703126V0.0H3.00218505859375Z M46.55549609375001 0.0 40.3027313232422 -24.82H44.69795764160157L48.456470458984384 -8.652176147460938Q48.739344482421885 -7.441117065429688 49.015508361816416 -6.077297668457032Q49.29167224121095 -4.713478271484376 49.42767224121095 -3.871806030273438Q49.563672241210945 -4.713478271484376 49.80294537353517 -6.077297668457032Q50.04221850585938 -7.441117065429688 50.32509252929688 -8.67206689453125L54.00982385253907 -24.82H58.297268676757824L52.07017614746095 0.0H46.55549609375001Z M81.20218505859377 0.0V-24.82H96.07890747070314V-21.117025634765625H85.3818483886719V-14.666251953125H94.88890747070315V-10.977386840820314H85.3818483886719V-3.7029743652343754H96.07890747070314V0.0H81.20218505859377Z M119.76327758789066 0.0V-24.82H124.93726867675784L131.84298327636722 -4.76344482421875Q131.7550925292969 -5.8521337890625 131.64025640869144 -7.33182275390625Q131.52542028808597 -8.811511718750001 131.45452954101566 -10.347637695312502Q131.38363879394535 -11.883763671875 131.38363879394535 -13.067982177734375V-24.82H135.2367224121094V0.0H130.06273132324222L123.21090747070315 -20.056555175781252Q123.29879821777347 -19.08142919921875 123.38668896484377 -17.69124755859375Q123.47457971191409 -16.301067993164065 123.5454704589844 -14.834559631347657Q123.61636120605472 -13.36805126953125 123.61636120605472 -12.149832763671876V0.0H119.76327758789066Z M164.47327758789066 0.0V-20.892445922851564H157.97163879394535V-24.83410925292969H175.22836120605473V-20.892445922851564H168.7267224121094V0.0H164.47327758789066Z M205.75643701171882 0.34Q203.20898327636723 0.34 201.34858416748054 -0.515781494140625Q199.4881850585938 -1.3715629882812501 198.47651281738288 -2.9413444824218753Q197.46484057617192 -4.5111259765625 197.45073132324225 -6.6589074707031255H201.704176147461Q201.704176147461 -5.146940917968751 202.80015942382818 -4.267793762207032Q203.89614270019536 -3.3886466064453127 205.81610925292975 -3.3886466064453127Q207.63985729980476 -3.3886466064453127 208.66784057617193 -4.243739135742188Q209.69582385253912 -5.098831665039063 209.69582385253912 -6.610798217773438Q209.69582385253912 -7.868109252929688 208.96644146728522 -8.791201782226564Q208.2370590820313 -9.714294311523439 206.90018505859382 -10.056840576171876L204.03145373535162 -10.832370117187502Q201.12342028808598 -11.594479370117188 199.52762207031256 -13.539878479003907Q197.9318238525391 -15.485277587890627 197.9318238525391 -18.225857299804687Q197.9318238525391 -20.33131103515625 198.89249609375005 -21.889874023437503Q199.853168334961 -23.448437011718752 201.60451281738287 -24.311274169921877Q203.35585729980474 -25.17410925292969 205.74487402343755 -25.17410925292969Q209.32712597656257 -25.17410925292969 211.4483065795899 -23.315327758789063Q213.56948718261725 -21.456546264648438 213.58359643554692 -18.331092529296875H209.33015161132818Q209.33015161132818 -19.789168334960937 208.3842775878907 -20.617314453125Q207.43840356445318 -21.445462646484376 205.69098327636723 -21.445462646484376Q204.01734448242195 -21.445462646484376 203.1013065795899 -20.662532958984375Q202.18526867675786 -19.87960534667969 202.18526867675786 -18.458075805664063Q202.18526867675786 -17.186655517578128 202.89186956787114 -16.273508361816408Q203.59847045898442 -15.360361206054689 204.90967224121098 -15.003705688476563L207.8720758056641 -14.194176147460938Q210.83145373535163 -13.432066894531252 212.39036120605473 -11.512340026855469Q213.94926867675787 -9.592613159179688 213.94926867675787 -6.778251953125Q213.94926867675787 -4.65868896484375 212.92765209960942 -3.0491259765625003Q211.90603344726568 -1.4395629882812502 210.0696889648438 -0.549781494140625Q208.23334448242193 0.34 205.75643701171882 0.34Z M274.9027313232423 0.0 281.1439331054689 -24.82H286.6303946533204L292.8972686767579 0.0H288.57004235839855L287.1966220703126 -6.019168334960938H280.6174871826173L279.24406689453133 0.0H274.9027313232423ZM281.3687224121095 -9.478361206054688H286.4113868408204L284.925092529297 -16.153714599609376Q284.5601092529298 -17.812555175781252 284.28394537353523 -19.165155029296876Q284.0077814941407 -20.517756958007816 283.9000000000001 -21.118882934570316Q283.79221850585947 -20.517756958007816 283.53594537353524 -19.17510144042969Q283.279672241211 -17.832445922851562 282.89479821777354 -16.187714599609375L281.3687224121095 -9.478361206054688Z M323.14594537353526 0.34Q320.75276477050795 0.34 318.9744749145509 -0.5597268676757813Q317.19618505859387 -1.4594537353515626 316.21562207031263 -3.114235229492188Q315.2350590820314 -4.769016723632813 315.2350590820314 -6.998907470703125V-17.821092529296877Q315.2350590820314 -20.08498327636719 316.21562207031263 -21.722764770507816Q317.19618505859387 -23.360546264648438 318.9744749145509 -24.26027416992188Q320.75276477050795 -25.16 323.14594537353526 -25.16Q325.5391259765626 -25.16 327.30041583251966 -24.253218505859376Q329.0617056884767 -23.346437011718752 330.0352140502931 -21.713158691406253Q331.0087224121095 -20.07988037109375 331.0087224121095 -17.821092529296877H326.75527758789076Q326.75527758789076 -19.57105908203125 325.8057076416017 -20.501207275390627Q324.85613873291027 -21.43135339355469 323.13230407714855 -21.43135339355469Q321.4084704589845 -21.43135339355469 320.4484871826173 -20.504220458984378Q319.4885039062501 -19.577087524414065 319.4885039062501 -17.835201782226562V-6.998907470703125Q319.4885039062501 -5.270361602783203 320.4484871826173 -4.322449478149414Q321.4084704589845 -3.3745373535156253 323.13230407714855 -3.3745373535156253Q324.85613873291027 -3.3745373535156253 325.8057076416017 -4.3245778503417975Q326.75527758789076 -5.274618347167969 326.75527758789076 -7.0070448303222665V-9.521857299804688H322.51890747070325V-13.20494091796875H331.0087224121095V-6.998907470703125Q331.0087224121095 -4.774869293212891 330.0352140502931 -3.1242161407470705Q329.0617056884767 -1.4735629882812502 327.30041583251966 -0.5667814941406251Q325.5391259765626 0.34 323.14594537353526 0.34Z M354.9021850585939 0.0V-24.82H369.7789074707033V-21.117025634765625H359.08184838867203V-14.666251953125H368.58890747070325V-10.977386840820314H359.08184838867203V-3.7029743652343754H369.7789074707033V0.0H354.9021850585939Z M393.4632775878908 0.0V-24.82H398.63726867675797L405.54298327636735 -4.76344482421875Q405.455092529297 -5.8521337890625 405.3402564086916 -7.33182275390625Q405.2254202880861 -8.811511718750001 405.1545295410158 -10.347637695312502Q405.0836387939455 -11.883763671875 405.0836387939455 -13.067982177734375V-24.82H408.93672241210953V0.0H403.76273132324235L396.9109074707033 -20.056555175781252Q396.9987982177736 -19.08142919921875 397.0866889648439 -17.69124755859375Q397.17457971191425 -16.301067993164065 397.2454704589845 -14.834559631347657Q397.31636120605486 -13.36805126953125 397.31636120605486 -12.149832763671876V0.0H393.4632775878908Z M440.4459453735353 0.34Q438.052764770508 0.34 436.274474914551 -0.5597268676757813Q434.49618505859394 -1.4594537353515626 433.5156220703127 -3.114235229492188Q432.53505908203147 -4.769016723632813 432.53505908203147 -6.998907470703125V-17.821092529296877Q432.53505908203147 -20.08498327636719 433.5156220703127 -21.722764770507816Q434.49618505859394 -23.360546264648438 436.274474914551 -24.26027416992188Q438.052764770508 -25.16 440.4459453735353 -25.16Q442.8391259765627 -25.16 444.60041583251973 -24.253218505859376Q446.3617056884768 -23.346437011718752 447.3352140502932 -21.713158691406253Q448.30872241210955 -20.07988037109375 448.30872241210955 -17.821092529296877H444.0552775878908Q444.0552775878908 -19.57105908203125 443.1057076416018 -20.501207275390627Q442.15613873291034 -21.43135339355469 440.4323040771486 -21.43135339355469Q438.70847045898455 -21.43135339355469 437.7484871826174 -20.504220458984378Q436.7885039062502 -19.577087524414065 436.7885039062502 -17.835201782226562V-6.998907470703125Q436.7885039062502 -5.263743286132813 437.7484871826174 -4.326194946289063Q438.70847045898455 -3.3886466064453127 440.4323040771486 -3.3886466064453127Q442.15613873291034 -3.3886466064453127 443.1057076416018 -4.326194946289063Q444.0552775878908 -5.263743286132813 444.0552775878908 -6.998907470703125H448.30872241210955Q448.30872241210955 -4.7831259765625 447.3352140502932 -3.128344482421875Q446.3617056884768 -1.4735629882812502 444.60041583251973 -0.5667814941406251Q442.8391259765627 0.34 440.4459453735353 0.34Z M477.27327758789085 0.0V-9.023420288085939L469.992185058594 -24.82H474.42719287109395L478.3029832763674 -16.211259765625Q478.75076477050806 -15.2021337890625 479.0583823852541 -14.219264221191407Q479.3660000000002 -13.236394653320314 479.47378149414084 -12.666033447265626Q479.60145373535175 -13.236394653320314 479.8962352294924 -14.219264221191407Q480.191016723633 -15.2021337890625 480.61890747070333 -16.211259765625L484.39269787597675 -24.82H488.8078149414065L481.5267224121096 -9.023420288085939V0.0H477.27327758789085Z"/></svg><div class="perf"></div><span class="rt">${me.role}${wait?" · ожидание №2":""}</span><b>${e.name}</b><div class="g"><div><span>Дата</span><i>${d.getDate()}.${String(d.getMonth()+1).padStart(2,"0")}</i></div><div><span>Сбор</span><i>${e.meet}</i></div><div><span>Оплата</span><i>${(PAY[me.role]*hrs(e)).toLocaleString("ru")} ₽</i></div></div>`;
+  const steps=wait?[["В листе ожидания","вы второй в очереди"],["Освободится место","придёт уведомление"],["Подтвердите за 2 часа","иначе место уйдёт следующему"],["Выход на смену",""]]
+    :[["Записались","место за вами"],["Подтвердите выход","за "+CONFIG.CONFIRM_HOURS+" ч до начала"],["Отметьтесь на площадке","кнопка «Я на месте»"],["Оплата","после смены"]];
+  $("#okTl").innerHTML=steps.map((x,i)=>`<div class="${i<1?"ok":i===1?"now":""}"><i>${i<1?"✓":i+1}</i><div><b>${x[0]}</b><span>${x[1]}</span></div></div>`).join("");
+  const p=$("#pass"); p.classList.remove("drop"); void p.offsetWidth; p.classList.add("drop");
+}
+
+/* ---------- мои смены ---------- */
+function todo(){ return EVENTS.filter(e=>{ const r=S.resp[e.id]; return r&&r.st==="go"&&((e.n<=1&&!r.conf)||(e.n===0&&r.check!=="here")); }); }
+function rMy(){
+  $("#tasks").innerHTML=todo().map(e=>{ const r=S.resp[e.id];
+    if(e.n===0) return `<div class="task"><div class="h">${ui("bolt")}<div><b>Сегодня: ${e.name}</b><p>Сбор в ${e.meet}, ${e.place}. Отметьтесь, когда будете на месте.</p></div></div><div class="grid2"><button class="btn w" data-check="${e.id}">Я на месте</button><button class="btn s" data-check="${e.id}">Опаздываю</button></div></div>`;
+    return `<div class="task"><div class="h">${ui("info")}<div><b>Подтвердите выход – ${rel(e.n)}</b><p>${e.name}, ${e.time}. ${r.role}. Если не подтвердить до 12:00, место уйдёт листу ожидания.</p></div></div><div class="grid2"><button class="btn w" data-conf="${e.id}">Подтверждаю</button><button class="btn s" data-drop="${e.id}">Не смогу</button></div></div>`; }).join("")
+    ||`<div class="note"><svg class="ui"><use href="#u-check"/></svg><div>Всё подтверждено. Хорошей смены!</div></div>`;
+  const mine=EVENTS.filter(e=>S.resp[e.id]&&S.resp[e.id].st!=="no");
+  $("#myList").innerHTML=mine.map(evCard).join("")||`<div class="note"><svg class="ui"><use href="#u-info"/></svg><div>Вы пока никуда не записаны – загляните в «Смены».</div></div>`;
+}
+
+/* ---------- день смены ---------- */
+function rCheck(){
+  const e=byId("e1"), r=S.resp.e1||{};
+  $("#chTitle").textContent=e.name;
+  $("#chNote").innerHTML=`Сбор в <b>${e.meet}</b> · ${e.place}, м. ${e.metro}. Дресс-код: ${e.dress}.`;
+  const b=$("#chBtn"), here=r.check==="here";
+  b.classList.toggle("done",here); b.innerHTML=here?`${ui("check")}<b>На месте</b><span>отмечено в ${r.at||"16:52"}</span>`:`${ui("check")}<b>Я на месте</b><span>нажмите у входа</span>`;
+  $("#chSub").textContent=here?"Супервайзер видит вас в составе. Подойдите к нему на бриф.":"Отметка уходит супервайзеру – он видит, кто уже на площадке";
+  $$("#late button").forEach(x=>x.classList.toggle("on",+x.dataset.late===S.late));
+}
+
+/* ---------- менеджер ---------- */
+function team(id){ const t=TEAM[id].map(p=>({...p})); const me=S.resp[id]; if(me&&id!=="e1"){ const i=t.findIndex(p=>p.n===CONFIG.ME.name); if(i>=0) Object.assign(t[i],{st:me.st,role:me.role,conf:!!me.conf}); else t.unshift({n:CONFIG.ME.name,...me}); } return t; }
+function rMgr(){
+  $("#mgrEvs").innerHTML=EVENTS.map(e=>{ const d=day(e.n); return `<button class="chip ${S.mgrEv===e.id?"on":""}" data-mev="${e.id}" style="flex:none">${d.getDate()}.${String(d.getMonth()+1).padStart(2,"0")} · ${e.name.split(" ")[0]}</button>`; }).join("");
+  const e=byId(S.mgrEv), t=team(e.id), day0=e.n===0;
+  $$("#mode button").forEach(b=>{ b.classList.toggle("on",b.dataset.mode===S.mode); b.disabled=b.dataset.mode==="day"&&!day0; b.style.opacity=b.disabled?.45:""; });
+  if(S.mode==="day"&&!day0) S.mode="set";
+  const need=Object.values(e.slots).reduce((a,[,n])=>a+n,0);
+  if(S.mode==="day"){
+    const go_=t.filter(p=>p.st==="go"), here=go_.filter(p=>p.check==="here"), late=go_.filter(p=>p.check==="late"), none=go_.filter(p=>!p.check);
+    $("#sumL").textContent="Отметки на площадке"; $("#sumR").textContent="сбор "+e.meet;
+    $("#sum4").innerHTML=[["here","На месте",here.length,"go"],["late","Опаздывают",late.length,"mb"],["none","Нет отметки",none.length,"no"],["all","В составе",go_.length,""]].map(([k,l,v,c])=>`<button class="${c} ${S.list===k?"on":""}" data-list="${k}"><b>${v}</b><span>${l}</span></button>`).join("");
+    if(!["here","late","none","all"].includes(S.list)) S.list="none";
+    const L={here,late,none,all:go_}[S.list];
+    $("#pplL").textContent={here:"На месте",late:"Опаздывают",none:"Нет отметки",all:"Весь состав"}[S.list]; $("#pplR").textContent=L.length+" чел";
+    $("#ppl").innerHTML=L.map(p=>person(p,p.check==="here"?`<span class="tag g">на месте</span>`:p.check==="late"?`<span class="tag y">+${p.lateMin} мин</span>`:`<span class="tag o">нет</span>`)).join("")||empty();
+    $("#mgrActs").innerHTML=`<button class="btn s" data-mact="ping">Позвонить без отметки</button><button class="btn s" data-mact="copy">Скопировать состав</button>`;
+  } else {
+    const c=k=>t.filter(p=>p.st===k);
+    $("#sumL").textContent="Ответы команды"; $("#sumR").textContent="нужно "+need+" чел";
+    if(!ST[S.list]) S.list="go";
+    $("#sum4").innerHTML=[["go","go"],["maybe","mb"],["no","no"],["silent",""]].map(([k,cl])=>`<button class="${cl} ${S.list===k?"on":""}" data-list="${k}"><b>${c(k).length}</b><span>${ST[k][0]}</span></button>`).join("");
+    const L=S.list==="go"?[...c("go"),...c("wait")]:c(S.list);
+    $("#pplL").textContent=ST[S.list][0]+(S.list==="go"&&c("wait").length?" + ожидание":""); $("#pplR").textContent=L.length+" чел";
+    $("#ppl").innerHTML=L.map(p=>person(p,p.st==="go"?(p.conf?`<span class="tag g">✓ подтвердил</span>`:`<span class="tag">записан</span>`):`<span class="tag ${ST[p.st][2]}">${ST[p.st][1]}</span>`)).join("")||empty();
+    const sil=c("silent").length, unc=c("go").filter(p=>!p.conf).length;
+    $("#mgrActs").innerHTML=`<button class="btn s" data-mact="remind">Напомнить молчащим${sil?" ("+sil+")":""}</button><button class="btn s" data-mact="confirm">Запросить подтверждение${unc?" ("+unc+")":""}</button><button class="btn s" data-mact="wait">Позвать из ожидания</button><button class="btn s" data-mact="copy">Скопировать состав</button>`;
+  }
+  $("#roleBars").innerHTML=Object.keys(e.slots).map(r=>{ const n=e.slots[r][1], h=t.filter(p=>p.role===r&&p.st==="go").length, f=Math.min(h,n);
+    return `<div class="rolebar"><div><b>${r}</b><div class="bar ${f>=n?"full":""}"><i style="width:${Math.round(f/n*100)}%"></i></div></div><span class="cnt" style="text-align:right">${f}/${n}${f<n?` <span style="color:var(--wine)">−${n-f}</span>`:" ✓"}</span></div>`; }).join("");
+}
+const initials=n=>n.split(" ").map(x=>x[0]).join("");
+const person=(p,tag)=>`<div class="pp"><div class="av">${initials(p.n)}</div><div><b>${p.n}${p.n===CONFIG.ME.name?" (вы)":""}</b><span>${p.role}</span></div>${tag}</div>`;
+const empty=()=>`<div class="pp" style="grid-template-columns:1fr"><span>Никого</span></div>`;
+
+/* ---------- новый сбор ---------- */
+function rNew(){
+  const d=day(3); if(!$("#nDate").value) $("#nDate").value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  $("#needs").innerHTML=Object.keys(S.need).map(r=>`<div class="need">${ico(r)}<b>${r}</b><div class="stepper"><button data-need="${r},-1" aria-label="Меньше">${ui("minus")}</button><output>${S.need[r]}</output><button class="pl" data-need="${r},1" aria-label="Больше">${ui("plus")}</button></div></div>`).join("");
+  $$("#dl button").forEach(b=>b.classList.toggle("on",b.dataset.dl===S.dl));
+  rPost();
+}
+function rPost(){
+  const v=$("#nDate").value, d=v?new Date(v+"T12:00"):day(3), roles=Object.entries(S.need).filter(([,n])=>n>0);
+  $("#post").innerHTML=`<span class="bot">T&amp;R – смены</span>📣 <b>Набор на смену</b><br><br><b>${$("#nName").value||"Мероприятие"}</b><br>📅 ${dlong(d)}, ${$("#nTime").value}<br>📍 ${$("#nPlace").value}<br><br>${roles.map(([r,n])=>`• ${r} – ${n} чел`).join("<br>")||"• роли не выбраны"}<br><br>👔 Total black · бриф перед сменой<br>⏳ Ответьте в течение ${S.dl}`;
+  rDock();
+}
+
+/* ---------- события ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-act]"); if(!t) return; const d=t.dataset;
+  if(d.act==="back") return back();
+  if(d.tab){ haptic(); return go(d.tab,{fade:true}); }
+  if(d.filter){ S.filter=d.filter; haptic(); return rFeed(); }
+  if(d.ev){ S.ev=d.ev; S.pick=S.resp[d.ev]?S.resp[d.ev].role:(byId(d.ev).slots[CONFIG.ME.role]?CONFIG.ME.role:null); haptic(); return go("ev"); }
+  if(d.pick){ const me=S.resp[S.ev]; if(me&&me.st==="go") return toast("Чтобы сменить роль, сначала откажитесь от записи"); S.pick=d.pick; haptic(); rEv(); return rDock(); }
+  if(d.ans) return answer(d.ans);
+  if(d.act==="cancel"){ const e=byId(S.ev); const fin=()=>{ S.resp[S.ev]={st:"no",role:S.pick}; store.set(); haptic("medium"); toast("Отказ принят – место передадим листу ожидания"); go("feed",{back:true}); }; return e.n<=1?ask("До смены меньше суток. Отказ сейчас снижает приоритет при следующих наборах. Точно не сможете?",fin):fin(); }
+  if(d.act==="cal"){ haptic(); return toast("Событие добавлено в календарь с напоминанием за 2 часа"); }
+  if(d.conf){ S.resp[d.conf].conf=true; store.set(); haptic("ok"); toast("Выход подтверждён – ждём вас!"); rMy(); return rDock(); }
+  if(d.drop) return ask("Отказаться от смены? Место уйдёт следующему в листе ожидания.",()=>{ S.resp[d.drop].st="no"; store.set(); haptic("medium"); rMy(); rDock(); });
+  if(d.check){ return go("check"); }
+  if(d.act==="here"){ const r=S.resp.e1; if(r.check==="here") return; const n=new Date(); r.check="here"; r.at=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); store.set(); haptic("ok"); rCheck(); return rDock(); }
+  if(d.late){ S.late=+d.late; const r=S.resp.e1; r.check="late"; store.set(); haptic(); toast("Супервайзер предупреждён: опоздание "+d.late+" мин"); return rCheck(); }
+  if(d.act==="call"){ haptic(); return toast("Откроется чат с супервайзером"); }
+  if(d.act==="new") return go("new");
+  if(d.mev){ S.mgrEv=d.mev; S.mode="set"; S.list="go"; haptic(); return rMgr(); }
+  if(d.mode){ if(t.disabled) return toast("Отметки доступны в день смены"); S.mode=d.mode; S.list=d.mode==="day"?"none":"go"; haptic(); return rMgr(); }
+  if(d.list){ S.list=d.list; haptic(); return rMgr(); }
+  if(d.mact){ haptic("ok"); const tx={remind:"Напоминание ушло тем, кто не ответил",confirm:"Записанным отправлен запрос «Подтвердите выход»",wait:"Первому в листе ожидания предложено место – 2 часа на ответ",ping:"Список без отметки скопирован – можно обзвонить"}[d.mact];
+    if(d.mact==="copy"){ const ev=byId(S.mgrEv), txt=ev.name+"\n"+team(ev.id).filter(p=>p.st==="go").map((p,i)=>(i+1)+". "+p.n+" – "+p.role).join("\n"); try{ navigator.clipboard.writeText(txt); }catch(x){} return toast("Состав скопирован – можно отправить клиенту"); }
+    return toast(tx); }
+  if(d.need){ const [r,v]=d.need.split(","); S.need[r]=Math.max(0,Math.min(50,S.need[r]+ +v)); haptic(); return rNew(); }
+  if(d.dl){ S.dl=d.dl; haptic(); return rNew(); }
+});
+document.addEventListener("input",e=>{ if(e.target.closest("#s-new")) rPost(); });
+
+/* демо-состояния: #feed #ev #ev-full #ok #wait #my #check #check-done #mgr #mgr-silent #mgr-day #new */
+(function boot(){
+  const saved=store.get(); if(saved&&!location.hash) S.resp=saved;
+  const h=(location.hash||"").slice(1);
+  switch(h){
+    case "ev": S.ev="e3"; S.pick="Хелпер"; go("ev"); break;
+    case "ev-full": S.ev="e4"; S.pick="Промо"; go("ev"); break;
+    case "ok": S.ev="e3"; S.pick="Хелпер"; S.resp.e3={st:"go",role:"Хелпер",conf:false}; go("ok"); break;
+    case "wait": S.ev="e4"; S.pick="Промо"; S.resp.e4={st:"wait",role:"Промо",conf:false}; go("ok"); break;
+    case "my": go("my"); break;
+    case "check": go("check"); break;
+    case "check-done": S.resp.e1.check="here"; S.resp.e1.at="16:52"; go("check"); break;
+    case "mgr": go("mgr"); break;
+    case "mgr-silent": S.list="silent"; go("mgr"); break;
+    case "mgr-day": S.mgrEv="e1"; S.mode="day"; S.list="none"; go("mgr"); break;
+    case "new": go("new"); break;
+    default: go("feed");
+  }
+})();
+</script>
+</body>
+</html>
